@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>融ける絵 — 画像を流体で溶かす</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kaisei+Tokumin:wght@400;700;800&family=Zen+Kaku+Gothic+New:wght@300;400;500&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0c0a;
+    --paper: #efe7da;
+    --dim: rgba(239, 231, 218, 0.5);
+    --faint: rgba(239, 231, 218, 0.15);
+    --amber: #e0a64b;
+    --mono: 'IBM Plex Mono', monospace;
+    --serif: 'Kaisei Tokumin', serif;
+    --sans: 'Zen Kaku Gothic New', sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; background: var(--bg); }
+  body { font-family: var(--sans); color: var(--paper); cursor: none; }
+
+  #gl { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+
+  .grain {
+    position: fixed; inset: 0; z-index: 9; pointer-events: none; opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .frame {
+    position: fixed; inset: 15px; border: 1px solid var(--faint);
+    pointer-events: none; z-index: 10;
+  }
+
+  header {
+    position: fixed; top: 40px; left: 46px; z-index: 20;
+    animation: fadein 1.4s ease both 0.2s;
+  }
+  .kicker {
+    font-family: var(--mono); font-size: 10px; font-weight: 300;
+    letter-spacing: 0.32em; color: var(--amber);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .kicker::before { content: ''; width: 26px; height: 1px; background: var(--amber); opacity: 0.6; }
+  h1 {
+    font-family: var(--serif); font-weight: 800;
+    font-size: clamp(30px, 4.2vw, 50px);
+    letter-spacing: 0.12em; margin-top: 10px; line-height: 1;
+    text-shadow: 0 2px 24px rgba(0,0,0,0.55);
+  }
+  .sub { font-size: 11px; font-weight: 300; letter-spacing: 0.22em; color: var(--dim); margin-top: 12px; }
+
+  .stats {
+    position: fixed; top: 42px; right: 46px; z-index: 20; text-align: right;
+    font-family: var(--mono); font-size: 10px; font-weight: 300;
+    letter-spacing: 0.14em; color: var(--dim); line-height: 2.1;
+    animation: fadein 1.4s ease both 0.4s;
+    text-shadow: 0 1px 8px rgba(0,0,0,0.6);
+  }
+  .stats b { color: var(--paper); font-weight: 400; }
+  .stats .live { color: var(--amber); }
+
+  .caption {
+    position: fixed; bottom: 116px; left: 46px; z-index: 20; max-width: 380px;
+    animation: fadein 1.4s ease both 0.6s;
+  }
+  .caption p {
+    font-size: 12.5px; font-weight: 300; line-height: 2.05; color: var(--dim);
+    text-shadow: 0 1px 8px rgba(0,0,0,0.7);
+  }
+  .caption .hint {
+    margin-top: 13px; font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.16em; color: var(--paper); text-shadow: 0 1px 8px rgba(0,0,0,0.7);
+  }
+  .caption .hint span { color: var(--amber); }
+
+  .controls {
+    position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
+    z-index: 20; display: flex; gap: 2px;
+    border: 1px solid var(--faint);
+    background: rgba(14, 12, 10, 0.55); backdrop-filter: blur(12px);
+    animation: fadein 1.4s ease both 0.8s;
+  }
+  .controls button {
+    cursor: none; appearance: none; border: none; background: transparent;
+    color: var(--dim); font-family: var(--sans); font-weight: 400;
+    padding: 13px 22px; font-size: 11.5px; letter-spacing: 0.16em;
+    transition: color 0.3s; position: relative;
+  }
+  .controls button:hover { color: var(--paper); }
+  .controls button .st { color: var(--amber); font-family: var(--mono); font-size: 10px; }
+  .controls .sep { width: 1px; background: var(--faint); }
+
+  .dropzone {
+    position: fixed; inset: 0; z-index: 40; display: none;
+    align-items: center; justify-content: center;
+    background: rgba(14, 12, 10, 0.75); backdrop-filter: blur(6px);
+    pointer-events: none;
+  }
+  .dropzone.show { display: flex; }
+  .dropzone div {
+    font-family: var(--serif); font-size: 26px; letter-spacing: 0.3em;
+    color: var(--amber); border: 1px dashed var(--amber); padding: 36px 64px;
+  }
+
+  .cursor {
+    position: fixed; z-index: 50; pointer-events: none;
+    width: 28px; height: 28px; border: 1.5px solid rgba(224, 166, 75, 0.65);
+    border-radius: 50%; transform: translate(-50%, -50%);
+    transition: width 0.25s, height 0.25s;
+  }
+  body.pressing .cursor { width: 50px; height: 50px; }
+
+  .fatal {
+    position: fixed; inset: 0; z-index: 100; display: none;
+    align-items: center; justify-content: center; background: var(--bg); padding: 40px;
+  }
+  .fatal.show { display: flex; }
+  .fatal h2 { font-family: var(--serif); font-size: 20px; margin-bottom: 14px; }
+  .fatal pre {
+    font-family: var(--mono); font-size: 11px; color: var(--dim);
+    white-space: pre-wrap; border: 1px solid var(--faint); padding: 16px; max-width: 540px;
+  }
+
+  @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+
+  @media (max-width: 720px) {
+    header { top: 30px; left: 28px; }
+    .stats { display: none; }
+    .caption { bottom: 126px; left: 28px; right: 28px; }
+    body { cursor: auto; } .cursor { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="gl"></canvas>
+<div class="grain"></div>
+<div class="frame"></div>
+
+<header>
+  <div class="kicker">Fluid Image Melt — Navier–Stokes</div>
+  <h1>融ける絵</h1>
+  <div class="sub">画像を流体の濃度場として流し込む</div>
+</header>
+
+<div class="stats">
+  <div>SIM <b id="stSim">--</b></div>
+  <div>DYE <b id="stDye">--</b></div>
+  <div>JACOBI <b>24 iter</b></div>
+  <div>再生 <b class="live" id="stRestore">ON</b></div>
+  <div>FPS <b class="live" id="stFps">--</b></div>
+</div>
+
+<div class="caption">
+  <p>画像そのものを流体の濃度場に変換しました。なぞれば絵の具のように融けて渦を巻き、放っておけば静かに元の姿へ戻っていきます。お手持ちの写真をドラッグ＆ドロップすれば、その画像が融けます。</p>
+  <div class="hint"><span>なぞる</span> そっと触れる ／ <span>ドラッグ</span> かき混ぜる ／ <span>R</span> 元に戻す</div>
+</div>
+
+<div class="controls">
+  <button id="btnRestore">自己再生 <span class="st" id="btnRestoreSt">ON</span></button>
+  <div class="sep"></div>
+  <button id="btnFile">画像を選ぶ</button>
+  <div class="sep"></div>
+  <button id="btnReset">元に戻す</button>
+</div>
+<input type="file" id="fileInput" accept="image/*" style="display:none">
+
+<div class="dropzone" id="dropzone"><div>ここに画像を落とす</div></div>
+
+<div class="cursor" id="cursor"></div>
+
+<div class="fatal" id="fatal"><div>
+  <h2>WebGL 2.0 を初期化できませんでした</h2>
+  <pre id="fatalMsg"></pre>
+</div></div>
+
+<script>
+'use strict';
+// ============================================================
+//  融ける絵 — an image becomes the dye field of a realtime
+//  Navier–Stokes fluid. Touch melts it; it slowly heals.
+// ============================================================
+
+const canvas = document.getElementById('gl');
+const gl = canvas.getContext('webgl2', { antialias: false, alpha: false });
+
+function fatal(msg) {
+  document.getElementById('fatalMsg').textContent = msg;
+  document.getElementById('fatal').classList.add('show');
+  throw new Error(msg);
+}
+if (!gl) fatal('このブラウザは WebGL 2.0 に対応していません。');
+if (!gl.getExtension('EXT_color_buffer_float'))
+  fatal('浮動小数点レンダリング (EXT_color_buffer_float) が利用できません。');
+
+function compile(type, src) {
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS))
+    fatal('Shader compile error:\n' + gl.getShaderInfoLog(s));
+  return s;
+}
+function makeProgram(fsSrc) {
+  const p = gl.createProgram();
+  gl.attachShader(p, compile(gl.VERTEX_SHADER, VS));
+  gl.attachShader(p, compile(gl.FRAGMENT_SHADER, fsSrc));
+  gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS))
+    fatal('Program link error:\n' + gl.getProgramInfoLog(p));
+  const u = {};
+  const n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
+  for (let i = 0; i < n; i++) {
+    const info = gl.getActiveUniform(p, i);
+    u[info.name] = gl.getUniformLocation(p, info.name);
+  }
+  return { p, u };
+}
+
+const VS = `#version 300 es
+void main(){
+  vec2 p = vec2(float((gl_VertexID<<1)&2), float(gl_VertexID&2));
+  gl_Position = vec4(p*2.0-1.0, 0.0, 1.0);
+}`;
+const HDR = `#version 300 es
+precision highp float;
+`;
+
+// ---------- solver shaders (same pipeline as 墨流し) ----------
+const advectionFS = HDR + `
+uniform sampler2D uVelocity, uSource;
+uniform vec2 uTexel, uVTexel;
+uniform float uDt, uDiss;
+out vec4 o;
+void main(){
+  vec2 uv = gl_FragCoord.xy * uTexel;
+  vec2 coord = uv - uDt * texture(uVelocity, uv).xy * uVTexel;
+  o = texture(uSource, coord) / (1.0 + uDiss * uDt);
+}`;
+
+const curlFS = HDR + `
+uniform sampler2D uVelocity;
+uniform vec2 uTexel;
+out vec4 o;
+void main(){
+  vec2 uv = gl_FragCoord.xy * uTexel;
+  float L = texture(uVelocity, uv - vec2(uTexel.x, 0.0)).y;
+  float R = texture(uVelocity, uv + vec2(uTexel.x, 0.0)).y;
+  float B = texture(uVelocity, uv - vec2(0.0, uTexel.y)).x;
+  float T = texture(uVelocity, uv + vec2(0.0, uTexel.y)).x;
+  o = vec4(0.5*(R - L - T + B), 0.0, 0.0, 1.0);
+}`;
+
+const vorticityFS = HDR + `
+uniform sampler2D uVelocity, uCurl;
+uniform vec2 uTexel;
+uniform float uStrength, uDt;
+out vec4 o;
+void main(){
+  vec2 uv = gl_FragCoord.xy * uTexel;
+  float L = texture(uCurl, uv - vec2(uTexel.x, 0.0)).x;
+  float R = texture(uCurl, uv + vec2(uTexel.x, 0.0)).x;
+  float B = texture(uCurl, uv - vec2(0.0, uTexel.y)).x;
+  float T = texture(uCurl, uv + vec2(0.0, uTexel.y)).x;
+  float C = texture(uCurl, uv).x;
+  vec2 force = 0.5 * vec2(abs(T) - abs(B), abs(R) - abs(L));
+  force /= length(force) + 1e-4;
+  force *= uStrength * C;
+  force.y *= -1.0;
+  vec2 vel = texture(uVelocity, uv).xy + force * uDt;
+  o = vec4(clamp(vel, -1000.0, 1000.0), 0.0, 1.0);
+}`;
+
+const divergenceFS = HDR + `
+uniform sampler2D uVelocity;
+uniform vec2 uTexel;
+out vec4 o;
+void main(){
+  vec2 uv = gl_FragCoord.xy * uTexel;
+  float L = texture(uVelocity, uv - vec2(uTexel.x, 0.0)).x;
+  float R = texture(uVelocity, uv + vec2(uTexel.x, 0.0)).x;
+  float B = texture(uVelocity, uv - vec2(0.0, uTexel.y)).y;
+  float T = texture(uVelocity, uv + vec2(0.0, uTexel.y)).y;
+  vec2 C = texture(uVelocity, uv).xy;
+  if(uv.x - uTexel.x < 0.0) L = -C.x;
+  if(uv.x + uTexel.x > 1.0) R = -C.x;
+  if(uv.y - uTexel.y < 0.0) B = -C.y;
+  if(uv.y + uTexel.y > 1.0) T = -C.y;
+  o = vec4(0.5*(R - L + T - B), 0.0, 0.0, 1.0);
+}`;
+
+const clearFS = HDR + `
+uniform sampler2D uTexture;
+uniform vec2 uTexel;
+uniform float uValue;
+out vec4 o;
+void main(){ o = uValue * texture(uTexture, gl_FragCoord.xy * uTexel); }`;
+
+const pressureFS = HDR + `
+uniform sampler2D uPressure, uDivergence;
+uniform vec2 uTexel;
+out vec4 o;
+void main(){
+  vec2 uv = gl_FragCoord.xy * uTexel;
+  float L = texture(uPressure, uv - vec2(uTexel.x, 0.0)).x;
+  float R = texture(uPressure, uv + vec2(uTexel.x, 0.0)).x;
+  float B = texture(uPressure, uv - vec2(0.0, uTexel.y)).x;
+  float T = texture(uPressure, uv + vec2(0.0, uTexel.y)).x;
+  float div = texture(uDivergence, uv).x;
+  o = vec4((L + R + B + T - div) * 0.25, 0.0, 0.0, 1.0);
+}`;
+
+const gradientFS = HDR + `
+uniform sampler2D uPressure, uVelocity;
+uniform vec2 uTexel;
+out vec4 o;
+void main(){
+  vec2 uv = gl_FragCoord.xy * uTexel;
+  float L = texture(uPressure, uv - vec2(uTexel.x, 0.0)).x;
+  float R = texture(uPressure, uv + vec2(uTexel.x, 0.0)).x;
+  float B = texture(uPressure, uv - vec2(0.0, uTexel.y)).x;
+  float T = texture(uPressure, uv + vec2(0.0, uTexel.y)).x;
+  vec2 vel = texture(uVelocity, uv).xy - 0.5*vec2(R - L, T - B);
+  o = vec4(vel, 0.0, 1.0);
+}`;
+
+const splatFS = HDR + `
+uniform sampler2D uTarget;
+uniform vec2 uTexel, uPoint;
+uniform vec3 uColor;
+uniform float uRadius, uAspect, uRadial, uForce;
+out vec4 o;
+void main(){
+  vec2 uv = gl_FragCoord.xy * uTexel;
+  vec2 d = uv - uPoint;
+  d.x *= uAspect;
+  float g = exp(-dot(d, d) / uRadius);
+  vec3 base = texture(uTarget, uv).rgb;
+  vec3 add = uColor;
+  if(uRadial > 0.5) add = vec3(normalize(d + 1e-5) * uForce, 0.0);
+  o = vec4(base + add * g, 1.0);
+}`;
+
+// ---------- image-specific shaders ----------
+// 画像を濃度場へ焼き込む (cover フィット)
+const stampFS = HDR + `
+uniform sampler2D uImage;
+uniform vec2 uTexel, uScale;
+out vec4 o;
+void main(){
+  vec2 uv = gl_FragCoord.xy * uTexel;
+  vec2 iuv = (uv - 0.5) * uScale + 0.5;
+  o = vec4(texture(uImage, iuv).rgb, 1.0);
+}`;
+
+// 元画像へゆっくり戻す (自己再生)
+const restoreFS = HDR + `
+uniform sampler2D uDye, uImage;
+uniform vec2 uTexel, uScale;
+uniform float uAmount;
+out vec4 o;
+void main(){
+  vec2 uv = gl_FragCoord.xy * uTexel;
+  vec2 iuv = (uv - 0.5) * uScale + 0.5;
+  vec3 dye = texture(uDye, uv).rgb;
+  vec3 img = texture(uImage, iuv).rgb;
+  o = vec4(mix(dye, img, uAmount), 1.0);
+}`;
+
+// 表示: 速度に沿った色収差スメア + ビネット
+const displayFS = HDR + `
+uniform sampler2D uDye, uVelocity;
+uniform vec2 uRes;
+out vec4 o;
+void main(){
+  vec2 uv = gl_FragCoord.xy / uRes;
+  vec2 v = texture(uVelocity, uv).xy;
+  vec2 sh = v * 0.0011;
+  vec3 col;
+  col.r = texture(uDye, uv + sh).r;
+  col.g = texture(uDye, uv).g;
+  col.b = texture(uDye, uv - sh).b;
+  float sp = length(v);
+  col += vec3(1.0, 0.95, 0.85) * smoothstep(70.0, 280.0, sp) * 0.09;
+  float d = length(uv - 0.5);
+  col *= 1.0 - 0.35*smoothstep(0.40, 0.95, d);
+  o = vec4(col, 1.0);
+}`;
+
+const progAdvect   = makeProgram(advectionFS);
+const progCurl     = makeProgram(curlFS);
+const progVort     = makeProgram(vorticityFS);
+const progDiv      = makeProgram(divergenceFS);
+const progClear    = makeProgram(clearFS);
+const progPressure = makeProgram(pressureFS);
+const progGrad     = makeProgram(gradientFS);
+const progSplat    = makeProgram(splatFS);
+const progStamp    = makeProgram(stampFS);
+const progRestore  = makeProgram(restoreFS);
+const progDisplay  = makeProgram(displayFS);
+
+gl.bindVertexArray(gl.createVertexArray());
+gl.disable(gl.BLEND);
+
+// ---------- framebuffers ----------
+let W = 0, H = 0;
+const DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+function createFBO(w, h, internal, format, filter) {
+  const tex = gl.createTexture();
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, internal, w, h, 0, format, gl.HALF_FLOAT, null);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  const fbo = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+  gl.clearColor(0, 0, 0, 1);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  return { tex, fbo, w, h };
+}
+function createDoubleFBO(w, h, internal, format, filter) {
+  return {
+    read: createFBO(w, h, internal, format, filter),
+    write: createFBO(w, h, internal, format, filter),
+    w, h, texelX: 1 / w, texelY: 1 / h,
+    swap() { const t = this.read; this.read = this.write; this.write = t; }
+  };
+}
+function attach(tex, unit) {
+  gl.activeTexture(gl.TEXTURE0 + unit);
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  return unit;
+}
+function blit(target) {
+  if (target) {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, target.fbo);
+    gl.viewport(0, 0, target.w, target.h);
+  } else {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, W, H);
+  }
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+}
+
+let velocity, dye, pressure, divergence, curl;
+function dims(base) {
+  const a = innerWidth / innerHeight;
+  return a > 1
+    ? { w: Math.round(base * a), h: base }
+    : { w: base, h: Math.round(base / a) };
+}
+function initFBOs() {
+  const sim = dims(224), dy = dims(960);
+  velocity   = createDoubleFBO(sim.w, sim.h, gl.RG16F,   gl.RG,   gl.LINEAR);
+  dye        = createDoubleFBO(dy.w,  dy.h,  gl.RGBA16F, gl.RGBA, gl.LINEAR);
+  pressure   = createDoubleFBO(sim.w, sim.h, gl.R16F,    gl.RED,  gl.NEAREST);
+  divergence = createFBO(sim.w, sim.h, gl.R16F, gl.RED, gl.NEAREST);
+  curl       = createFBO(sim.w, sim.h, gl.R16F, gl.RED, gl.NEAREST);
+  document.getElementById('stSim').textContent = sim.w + '×' + sim.h;
+  document.getElementById('stDye').textContent = dy.w + '×' + dy.h;
+}
+
+// ---------- source image ----------
+const srcTex = gl.createTexture();
+let srcW = 1, srcH = 1;
+const cover = { x: 1, y: 1 };
+
+function computeCover() {
+  const ca = innerWidth / innerHeight, ia = srcW / srcH;
+  if (ca > ia) { cover.x = 1; cover.y = ia / ca; }
+  else { cover.x = ca / ia; cover.y = 1; }
+}
+function setSource(imageLike, w, h) {
+  srcW = w; srcH = h;
+  gl.bindTexture(gl.TEXTURE_2D, srcTex);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, imageLike);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  computeCover();
+}
+function stamp() {
+  const { p, u } = progStamp;
+  gl.useProgram(p);
+  gl.uniform1i(u.uImage, attach(srcTex, 0));
+  gl.uniform2f(u.uScale, cover.x, cover.y);
+  for (let i = 0; i < 2; i++) {        // 両バッファに焼き込む
+    gl.uniform2f(u.uTexel, dye.texelX, dye.texelY);
+    blit(dye.write);
+    dye.swap();
+  }
+}
+function reset() {
+  stamp();
+  [velocity.read, velocity.write, pressure.read, pressure.write].forEach(f => {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, f.fbo);
+    gl.clearColor(0, 0, 0, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+  });
+}
+
+// ---------- default artwork (procedural, Canvas 2D) ----------
+let usingDefault = true;
+function makeDefaultArt() {
+  const c = document.createElement('canvas');
+  c.width = 1200; c.height = 1500;
+  const x = c.getContext('2d');
+  const g = x.createLinearGradient(0, 0, 0, c.height);
+  g.addColorStop(0.00, '#241543');
+  g.addColorStop(0.45, '#75254e');
+  g.addColorStop(0.72, '#d0503a');
+  g.addColorStop(1.00, '#f0a93f');
+  x.fillStyle = g; x.fillRect(0, 0, c.width, c.height);
+  // 太陽
+  const sy = c.height * 0.40;
+  const rg = x.createRadialGradient(600, sy, 40, 600, sy, 430);
+  rg.addColorStop(0, 'rgba(255,240,214,0.95)');
+  rg.addColorStop(0.25, 'rgba(255,205,140,0.55)');
+  rg.addColorStop(1, 'rgba(255,180,110,0)');
+  x.fillStyle = rg; x.fillRect(0, 0, c.width, c.height);
+  x.fillStyle = '#fff0d2';
+  x.beginPath(); x.arc(600, sy, 150, 0, 7); x.fill();
+  // 山なみ
+  const layers = [
+    { y: 0.62, amp: 70, col: '#3a1f44' },
+    { y: 0.72, amp: 90, col: '#2b1838' },
+    { y: 0.82, amp: 60, col: '#1c1028' }
+  ];
+  for (const L of layers) {
+    x.fillStyle = L.col;
+    x.beginPath();
+    x.moveTo(0, c.height);
+    for (let px = 0; px <= c.width; px += 10) {
+      const yy = c.height * L.y
+        + Math.sin(px * 0.004 + L.amp) * L.amp
+        + Math.sin(px * 0.013 + L.amp * 2) * L.amp * 0.3;
+      x.lineTo(px, yy);
+    }
+    x.lineTo(c.width, c.height);
+    x.fill();
+  }
+  // 水面のきらめき
+  x.fillStyle = 'rgba(255,220,160,0.5)';
+  for (let i = 0; i < 60; i++) {
+    const wy = c.height * (0.86 + Math.random() * 0.12);
+    x.fillRect(Math.random() * c.width, wy, 30 + Math.random() * 70, 3);
+  }
+  // 鳥
+  x.strokeStyle = 'rgba(30,16,40,0.85)'; x.lineWidth = 5; x.lineCap = 'round';
+  for (let i = 0; i < 5; i++) {
+    const bx = 150 + Math.random() * 700, by = c.height * (0.13 + Math.random() * 0.2);
+    const s = 12 + Math.random() * 14;
+    x.beginPath();
+    x.moveTo(bx - s, by); x.quadraticCurveTo(bx - s * 0.4, by - s * 0.7, bx, by);
+    x.quadraticCurveTo(bx + s * 0.4, by - s * 0.7, bx + s, by);
+    x.stroke();
+  }
+  // 縦書きの題
+  x.fillStyle = 'rgba(255,242,220,0.92)';
+  x.font = '800 92px "Kaisei Tokumin", serif';
+  x.textAlign = 'center';
+  [...'夢のなごり'].forEach((ch, i) => x.fillText(ch, c.width - 140, 230 + i * 112));
+  return c;
+}
+
+// ---------- splats ----------
+function splat(target, x, y, color, radius, radial, force) {
+  const { p, u } = progSplat;
+  gl.useProgram(p);
+  gl.uniform1i(u.uTarget, attach(target.read.tex, 0));
+  gl.uniform2f(u.uTexel, target.texelX, target.texelY);
+  gl.uniform2f(u.uPoint, x, y);
+  gl.uniform3f(u.uColor, color[0], color[1], color[2]);
+  gl.uniform1f(u.uRadius, radius);
+  gl.uniform1f(u.uAspect, innerWidth / innerHeight);
+  gl.uniform1f(u.uRadial, radial);
+  gl.uniform1f(u.uForce, force);
+  blit(target.write);
+  target.swap();
+}
+function push(x, y, dx, dy, strong) {
+  const f = strong ? 6500 : 1600;
+  const r = strong ? 0.0035 : 0.0012;
+  splat(velocity, x, y, [dx * f, dy * f, 0], r, 0, 0);
+}
+function ripple(x, y, force, radius) {
+  splat(velocity, x, y, [0, 0, 0], radius, 1, force);
+}
+
+// ---------- simulation ----------
+const VORT_STRENGTH = 16, PRESSURE_ITER = 24;
+const VEL_DISS = 0.7, RESTORE_RATE = 0.5;
+let restoreOn = true;
+
+function step(dt) {
+  gl.useProgram(progCurl.p);
+  gl.uniform1i(progCurl.u.uVelocity, attach(velocity.read.tex, 0));
+  gl.uniform2f(progCurl.u.uTexel, velocity.texelX, velocity.texelY);
+  blit(curl);
+
+  gl.useProgram(progVort.p);
+  gl.uniform1i(progVort.u.uVelocity, attach(velocity.read.tex, 0));
+  gl.uniform1i(progVort.u.uCurl, attach(curl.tex, 1));
+  gl.uniform2f(progVort.u.uTexel, velocity.texelX, velocity.texelY);
+  gl.uniform1f(progVort.u.uStrength, VORT_STRENGTH);
+  gl.uniform1f(progVort.u.uDt, dt);
+  blit(velocity.write);
+  velocity.swap();
+
+  gl.useProgram(progDiv.p);
+  gl.uniform1i(progDiv.u.uVelocity, attach(velocity.read.tex, 0));
+  gl.uniform2f(progDiv.u.uTexel, velocity.texelX, velocity.texelY);
+  blit(divergence);
+
+  gl.useProgram(progClear.p);
+  gl.uniform1i(progClear.u.uTexture, attach(pressure.read.tex, 0));
+  gl.uniform2f(progClear.u.uTexel, pressure.texelX, pressure.texelY);
+  gl.uniform1f(progClear.u.uValue, 0.8);
+  blit(pressure.write);
+  pressure.swap();
+
+  gl.useProgram(progPressure.p);
+  gl.uniform2f(progPressure.u.uTexel, pressure.texelX, pressure.texelY);
+  gl.uniform1i(progPressure.u.uDivergence, attach(divergence.tex, 1));
+  for (let i = 0; i < PRESSURE_ITER; i++) {
+    gl.uniform1i(progPressure.u.uPressure, attach(pressure.read.tex, 0));
+    blit(pressure.write);
+    pressure.swap();
+  }
+
+  gl.useProgram(progGrad.p);
+  gl.uniform1i(progGrad.u.uPressure, attach(pressure.read.tex, 0));
+  gl.uniform1i(progGrad.u.uVelocity, attach(velocity.read.tex, 1));
+  gl.uniform2f(progGrad.u.uTexel, velocity.texelX, velocity.texelY);
+  blit(velocity.write);
+  velocity.swap();
+
+  gl.useProgram(progAdvect.p);
+  gl.uniform1i(progAdvect.u.uVelocity, attach(velocity.read.tex, 0));
+  gl.uniform1i(progAdvect.u.uSource, attach(velocity.read.tex, 0));
+  gl.uniform2f(progAdvect.u.uTexel, velocity.texelX, velocity.texelY);
+  gl.uniform2f(progAdvect.u.uVTexel, velocity.texelX, velocity.texelY);
+  gl.uniform1f(progAdvect.u.uDt, dt);
+  gl.uniform1f(progAdvect.u.uDiss, VEL_DISS);
+  blit(velocity.write);
+  velocity.swap();
+
+  // 画像 (=濃度場) の移流。消散ゼロ — 絵は薄れず、ただ流れる
+  gl.uniform1i(progAdvect.u.uVelocity, attach(velocity.read.tex, 0));
+  gl.uniform1i(progAdvect.u.uSource, attach(dye.read.tex, 1));
+  gl.uniform2f(progAdvect.u.uTexel, dye.texelX, dye.texelY);
+  gl.uniform1f(progAdvect.u.uDiss, 0.0);
+  blit(dye.write);
+  dye.swap();
+
+  // 自己再生 — 元画像へ指数的に回帰
+  if (restoreOn) {
+    const { p, u } = progRestore;
+    gl.useProgram(p);
+    gl.uniform1i(u.uDye, attach(dye.read.tex, 0));
+    gl.uniform1i(u.uImage, attach(srcTex, 1));
+    gl.uniform2f(u.uTexel, dye.texelX, dye.texelY);
+    gl.uniform2f(u.uScale, cover.x, cover.y);
+    gl.uniform1f(u.uAmount, 1 - Math.exp(-RESTORE_RATE * dt));
+    blit(dye.write);
+    dye.swap();
+  }
+}
+
+// ---------- input ----------
+const pointer = { x: 0, y: 0, px: 0, py: 0, down: false, moved: false, has: false };
+const mouseUI = { x: innerWidth / 2, y: innerHeight / 2 };
+let lastInput = 0, lastRipple = 0;
+
+window.addEventListener('pointerdown', e => {
+  if (e.target.closest('.controls')) return;
+  pointer.down = true;
+  pointer.x = pointer.px = e.clientX / innerWidth;
+  pointer.y = pointer.py = 1 - e.clientY / innerHeight;
+  document.body.classList.add('pressing');
+  lastInput = performance.now() / 1000;
+});
+window.addEventListener('pointermove', e => {
+  mouseUI.x = e.clientX; mouseUI.y = e.clientY;
+  if (!pointer.has) {
+    pointer.px = e.clientX / innerWidth;
+    pointer.py = 1 - e.clientY / innerHeight;
+    pointer.has = true;
+  }
+  pointer.x = e.clientX / innerWidth;
+  pointer.y = 1 - e.clientY / innerHeight;
+  pointer.moved = true;
+  lastInput = performance.now() / 1000;
+});
+window.addEventListener('pointerup', () => {
+  pointer.down = false;
+  document.body.classList.remove('pressing');
+});
+window.addEventListener('keydown', e => {
+  if (e.key === 'r' || e.key === 'R') reset();
+});
+
+const stRestore = document.getElementById('stRestore');
+const btnRestoreSt = document.getElementById('btnRestoreSt');
+document.getElementById('btnRestore').addEventListener('click', () => {
+  restoreOn = !restoreOn;
+  stRestore.textContent = btnRestoreSt.textContent = restoreOn ? 'ON' : 'OFF';
+});
+document.getElementById('btnReset').addEventListener('click', reset);
+document.getElementById('btnFile').addEventListener('click', () =>
+  document.getElementById('fileInput').click());
+document.getElementById('fileInput').addEventListener('change', e => {
+  if (e.target.files[0]) loadFile(e.target.files[0]);
+});
+
+// drag & drop
+const dropzone = document.getElementById('dropzone');
+let dragDepth = 0;
+window.addEventListener('dragenter', e => {
+  e.preventDefault(); dragDepth++;
+  dropzone.classList.add('show');
+});
+window.addEventListener('dragleave', e => {
+  e.preventDefault(); dragDepth--;
+  if (dragDepth <= 0) { dragDepth = 0; dropzone.classList.remove('show'); }
+});
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => {
+  e.preventDefault(); dragDepth = 0;
+  dropzone.classList.remove('show');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) loadFile(f);
+});
+function loadFile(f) {
+  const img = new Image();
+  img.onload = () => {
+    setSource(img, img.naturalWidth, img.naturalHeight);
+    usingDefault = false;
+    URL.revokeObjectURL(img.src);
+    reset();
+  };
+  img.src = URL.createObjectURL(f);
+}
+
+// ---------- init ----------
+function resize() {
+  W = Math.floor(innerWidth * DPR);
+  H = Math.floor(innerHeight * DPR);
+  canvas.width = W; canvas.height = H;
+  initFBOs();
+  computeCover();
+  stamp();
+}
+const art = makeDefaultArt();
+setSource(art, art.width, art.height);
+resize();
+window.addEventListener('resize', resize);
+
+// フォント到着後に既定アートを描き直す (題字を明朝で)
+document.fonts.load('800 92px "Kaisei Tokumin"').then(() => {
+  if (usingDefault) {
+    const a2 = makeDefaultArt();
+    setSource(a2, a2.width, a2.height);
+    stamp();
+  }
+});
+
+// 開幕の揺らぎ
+const introQueue = [1.0, 1.9, 2.8].map(t => ({
+  t, x: 0.25 + Math.random() * 0.5, y: 0.3 + Math.random() * 0.4
+}));
+
+// ---------- main loop ----------
+const cursorEl = document.getElementById('cursor');
+const elFps = document.getElementById('stFps');
+let cx = mouseUI.x, cy = mouseUI.y;
+let last = performance.now(), fpsAcc = 0, fpsN = 0, fpsT = 0;
+
+function loop(now) {
+  const dt = Math.min((now - last) / 1000, 1 / 30);
+  last = now;
+  const t = now / 1000;
+
+  cx += (mouseUI.x - cx) * 0.25;
+  cy += (mouseUI.y - cy) * 0.25;
+  cursorEl.style.left = cx + 'px';
+  cursorEl.style.top = cy + 'px';
+
+  while (introQueue.length && t > introQueue[0].t) {
+    const d = introQueue.shift();
+    ripple(d.x, d.y, 220, 0.005);
+    lastRipple = t;
+  }
+
+  if (pointer.moved) {
+    const dx = Math.max(-0.025, Math.min(0.025, pointer.x - pointer.px));
+    const dy = Math.max(-0.025, Math.min(0.025, pointer.y - pointer.py));
+    if (dx !== 0 || dy !== 0) push(pointer.x, pointer.y, dx, dy, pointer.down);
+    pointer.px = pointer.x;
+    pointer.py = pointer.y;
+    pointer.moved = false;
+  }
+
+  // 放置時 — 水面がひとりでに揺れる
+  if (t - lastInput > 4 && t - lastRipple > 3.2 && !introQueue.length) {
+    ripple(0.15 + Math.random() * 0.7, 0.2 + Math.random() * 0.6, 130, 0.005);
+    lastRipple = t;
+  }
+
+  step(dt);
+
+  gl.useProgram(progDisplay.p);
+  gl.uniform1i(progDisplay.u.uDye, attach(dye.read.tex, 0));
+  gl.uniform1i(progDisplay.u.uVelocity, attach(velocity.read.tex, 1));
+  gl.uniform2f(progDisplay.u.uRes, W, H);
+  blit(null);
+
+  fpsAcc += dt; fpsN++; fpsT += dt;
+  if (fpsT > 0.5) {
+    elFps.textContent = Math.round(fpsN / fpsAcc);
+    fpsAcc = 0; fpsN = 0; fpsT = 0;
+  }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

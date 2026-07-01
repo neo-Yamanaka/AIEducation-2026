@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI駆動開発ナレッジ — 生成AIとClaude Codeで、律して速く作る</title>
+<meta name="description" content="生成AIとClaude Codeを使ったAI駆動開発を、ルールと実践テクニックの両面から学べるサイト。用語解説つき・インタラクティブ。" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Shippori+Mincho+B1:wght@500;700&family=Zen+Kaku+Gothic+New:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body class="locked">
+
+<!-- ============ LOADER ============ -->
+<div id="loader">
+  <canvas id="loader-canvas"></canvas>
+  <div class="loader-core">
+    <div class="loader-mark">Loading</div>
+    <div class="loader-bar"><i id="loader-fill"></i></div>
+    <div class="loader-status" id="loader-status">connecting nodes</div>
+  </div>
+</div>
+
+<div id="progress"></div>
+
+<!-- ============ HEADER ============ -->
+<header class="top">
+  <div class="brand"><span class="dot"></span>AI駆動開発ナレッジ</div>
+  <nav>
+    <a href="#basics">基礎</a>
+    <a href="#rules">ルール</a>
+    <a href="#practice">実践</a>
+    <a href="#trust">信頼度</a>
+    <a href="#glossary">用語集</a>
+    <a href="#cases">事例</a>
+  </nav>
+</header>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <canvas id="bg-canvas"></canvas>
+  <div class="hero-inner">
+    <div class="eyebrow label">Generative AI &nbsp;×&nbsp; Claude Code</div>
+    <h1>
+      <span class="l">AIと、</span>
+      <span class="l">賢く付き合う<em>技術</em>。</span>
+    </h1>
+    <p class="lead">生成AIは一瞬でコードを生む。けれど、前提を間違えたまま走ることもある。このサイトは、品質を保ちながらAIと開発を進めるための「ルール」と「実践テクニック」を、用語解説つきで一気に学べる場所です。</p>
+    <div class="cta">
+      <a href="#basics" class="btn primary">学びはじめる →</a>
+      <a href="#glossary" class="btn ghost">用語集を見る</a>
+    </div>
+  </div>
+  <div class="scroll-hint">Scroll<i></i></div>
+</section>
+
+<!-- ============ 基礎 ============ -->
+<section id="basics" class="block">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">00 — Foundation</div>
+      <h2>まず、土台の<em>3つ</em>。</h2>
+      <p>細かいルールに入る前に、この3語だけ押さえておけば全体が読めます。下線つきの用語は、ホバー（スマホはタップ）で意味が出ます。</p>
+    </div>
+    <div class="basics">
+      <div class="bcard reveal">
+        <div class="n">i.</div>
+        <h3>生成AIとは</h3>
+        <p>文章やコードを自動で作り出すAI。<span class="term" data-t="prompt">プロンプト</span>（指示文）を与えると、それに沿った出力を返してくれます。ChatGPT や Claude がその代表です。</p>
+      </div>
+      <div class="bcard reveal">
+        <div class="n">ii.</div>
+        <h3>AI駆動開発とは</h3>
+        <p>生成AIに<span class="term" data-t="impl">実装</span>や調査・レビューを任せながら進める開発スタイル。速い反面、「どこまで任せ、どこを人が確認するか」の設計が品質を分けます。</p>
+      </div>
+      <div class="bcard reveal">
+        <div class="n">iii.</div>
+        <h3>Claude Codeとは</h3>
+        <p>Anthropic の Claude を、コマンド操作でコーディングに使えるツール。<span class="term" data-t="rulefile">ルールファイル</span>や<span class="term" data-t="slash">スラッシュコマンド</span>で、AIに前提を毎回読ませて作業させられます。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 章マップ ============ -->
+<section class="block" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">Map — 7 Chapters</div>
+      <h2>このサイトの<em>歩き方</em></h2>
+      <p>前半（1〜6章）はチームで守りたい<em style="color:var(--warm);font-style:normal">ルール・運用方針</em>。後半（7章）は日々の作業を楽にする<em style="color:var(--accent-2);font-style:normal">実践テクニック</em>。気になる章へどうぞ。</p>
+    </div>
+    <div class="map reveal">
+      <a href="#ch1" class="mnode"><span class="mc">CH.01</span><div class="mt">ルールの統一</div><div class="md">規約・設計方針・編集範囲を明文化</div></a>
+      <a href="#ch2" class="mnode"><span class="mc">CH.02</span><div class="mt">ルールの集約</div><div class="md">CLAUDE.md に集約しAIに毎回読ませる</div></a>
+      <a href="#ch3" class="mnode"><span class="mc">CH.03</span><div class="mt">セキュリティ</div><div class="md">機密を渡さない・権限を制御する</div></a>
+      <a href="#ch4" class="mnode"><span class="mc">CH.04</span><div class="mt">DB設計・変更管理</div><div class="md">スキーマ変更は承認制＋人の確認</div></a>
+      <a href="#ch5" class="mnode"><span class="mc">CH.05</span><div class="mt">修正フロー</div><div class="md">前後の確認・テスト・git運用</div></a>
+      <a href="#ch6" class="mnode"><span class="mc">CH.06</span><div class="mt">AI出力との向き合い方</div><div class="md">出力は「たたき台」、判断は人</div></a>
+      <a href="#ch7" class="mnode"><span class="mc">CH.07</span><div class="mt">実践テクニック</div><div class="md">ルーティング・プラン承認 ほか</div></a>
+      <a href="#trust" class="mnode"><span class="mc" style="color:var(--warm)">Extra</span><div class="mt">信頼度メーター</div><div class="md">どこまで信用する？を体感する</div></a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ルール編 (1-6) ============ -->
+<section id="rules" class="block" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">Part Ⅰ — Rules</div>
+      <h2>守るべきこと<em>（1〜6章）</em></h2>
+      <p>ツールに依存しない、普遍的な運用原則。チームで共有する前提として読んでください。</p>
+    </div>
+
+    <div id="ch1" class="chapter reveal">
+      <div class="idx">01</div>
+      <div>
+        <h3>ルール・方針の統一</h3>
+        <div class="sub">Unify the rules</div>
+        <p>AIを使う開発では、人ごとに指示の出し方が違うと、コード品質や設計がそろわなくなります。チームであらかじめ共通ルールを決め、AIにも同じ前提で作業させます。</p>
+        <h4>明文化したいコーディングルール</h4>
+        <ul class="rules">
+          <li>命名規則 / ディレクトリ構成（＝フォルダの置き方）</li>
+          <li>コメントの書き方 / <span class="term" data-t="errhandle">エラーハンドリング</span>方針</li>
+          <li><span class="term" data-t="test">テスト</span>方針、そして「誰がどのファイルを触るか」の担当範囲</li>
+        </ul>
+        <h4>AIへの前提指示（設計方針）</h4>
+        <ul class="rules">
+          <li>勝手に既存<span class="term" data-t="spec">仕様</span>を変えない／推測だけで<span class="term" data-t="impl">実装</span>しない</li>
+          <li>不明点は確認する／影響範囲を調べてから直す</li>
+          <li>指示された範囲外を直さない／大きな変更は実装前に方針を提示する</li>
+        </ul>
+        <div class="note"><span class="ct">Why</span>こうした前提を先に渡すことで、AIの「やりすぎた修正」や意図しない変更のリスクを下げられます。</div>
+      </div>
+    </div>
+
+    <div id="ch2" class="chapter reveal">
+      <div class="idx">02</div>
+      <div>
+        <h3>ルールの集約と共有</h3>
+        <div class="sub">Centralize into rule files</div>
+        <p>1章で決めたルールは、持っているだけでは効きません。<span class="term" data-t="rulefile">ルールファイル</span>として、AIが毎回自動で読み込む場所に置いて初めて実効性を持ちます。</p>
+        <h4>代表的なルールファイル</h4>
+        <ul class="rules">
+          <li><code style="font-family:var(--mono);color:var(--accent-2)">CLAUDE.md</code>（Claude Code）／ <code style="font-family:var(--mono);color:var(--accent-2)">AGENTS.md</code> ／ <code style="font-family:var(--mono);color:var(--accent-2)">.cursorrules</code>（Cursor）</li>
+          <li><span class="term" data-t="domain">ドメイン固有</span>のルールは <code style="font-family:var(--mono);color:var(--accent-2)">.claude/rules/*.md</code> のように、特定パスを触ったときだけ読ませる</li>
+        </ul>
+        <h4>運用のコツ</h4>
+        <ul class="rules">
+          <li>ファイルは<em style="font-style:normal;color:var(--accent-2)">シンプルに保つ</em>。詰め込みすぎると毎回の読み込み<span class="term" data-t="token">トークン</span>が増え、肝心のルールが埋もれる</li>
+          <li>全体に効かせたいルールは先頭に、特定分野のルールは分離する</li>
+          <li>重要な方針は、節目で登板するレビュー役（アドバイザー機能）に向けて書くとブレにくい</li>
+        </ul>
+      </div>
+    </div>
+
+    <div id="ch3" class="chapter reveal">
+      <div class="idx">03</div>
+      <div>
+        <h3>セキュリティ・機密情報の取り扱い</h3>
+        <div class="sub">Security &amp; secrets</div>
+        <p>AIにコードやデータを渡す開発では、安全面のルールを最初に決めます。特に個人情報や認証情報を扱うシステムでは重要度が高いです。</p>
+        <ul class="rules">
+          <li><span class="term" data-t="secret">機密情報</span>（<span class="term" data-t="apikey">APIキー</span>・<span class="term" data-t="dotenv">.env</span>・本番データ等）をAIの<span class="term" data-t="context">コンテキスト</span>に渡さない</li>
+          <li><span class="term" data-t="injection">プロンプトインジェクション</span>に注意。外部から取り込んだ文章は「データ」として扱わせる</li>
+          <li>コマンド自動実行は<span class="term" data-t="allowlist">許可/拒否リスト</span>で制御（<code style="font-family:var(--mono);color:var(--accent-2)">rm</code>・<code style="font-family:var(--mono);color:var(--accent-2)">git push</code>・<span class="term" data-t="dotenv">.env</span>読み取り等を拒否）</li>
+          <li>AIが勧める<span class="term" data-t="lib">ライブラリ</span>は実在する正規品か確認（<span class="term" data-t="pkghallu">パッケージハルシネーション</span>はサプライチェーン上のリスク）</li>
+        </ul>
+        <div class="callout"><span class="ct">Caution</span>「AIが勝手に破壊的な操作をした」という事故の大半は、権限と機密情報の扱いをルール化していないことが原因です。</div>
+      </div>
+    </div>
+
+    <div id="ch4" class="chapter reveal">
+      <div class="idx">04</div>
+      <div>
+        <h3>データベース設計・変更管理</h3>
+        <div class="sub">Database changes</div>
+        <p>AIが「必要だ」と判断して勝手に<span class="term" data-t="table">テーブル</span>を増減したり、<span class="term" data-t="schema">スキーマ</span>を変えたりすると、既存機能や他メンバーの作業に大きく影響します。<span class="term" data-t="db">DB</span>設計は後戻りが難しいぶん、慎重に。</p>
+        <ul class="rules">
+          <li>テーブルの追加・削除は事前承認制にする</li>
+          <li>カラムの追加・変更・削除はレビュー対象にする</li>
+          <li><span class="term" data-t="migration">マイグレーションファイル</span>の内容を必ず確認する</li>
+          <li>既存データへの影響を事前に確認／複数人開発では承認フローを設ける</li>
+        </ul>
+        <div class="note"><span class="ct">Principle</span>AIの提案をそのまま採用せず、<em style="font-style:normal;color:var(--accent-2)">人間による確認を必須</em>に。</div>
+      </div>
+    </div>
+
+    <div id="ch5" class="chapter reveal">
+      <div class="idx">05</div>
+      <div>
+        <h3>ソース修正をAIに任せる際の作業ルール</h3>
+        <div class="sub">Editing workflow</div>
+        <h4>修正前後の基本フロー</h4>
+        <p><em style="font-style:normal;color:var(--warm)">修正前</em>…対象の<span class="term" data-t="spec">仕様</span>・既存コードの構造・影響範囲をAIに確認させる。<br><em style="font-style:normal;color:var(--warm)">修正後</em>…<span class="term" data-t="test">テスト</span>実行・<span class="term" data-t="diff">差分</span>確認・不要な変更が無いかをチェック。</p>
+        <ul class="rules check">
+          <li>頼んでいない<span class="term" data-t="refactor">リファクタリング</span>をさせない</li>
+          <li>実装内容をAIに説明させ、作業者自身が理解する</li>
+          <li>タスクごとに<span class="term" data-t="dod">完了の定義（DoD）</span>を先に決める</li>
+        </ul>
+        <h4>テストの健全性を守る</h4>
+        <p>AIは<span class="term" data-t="test">テスト</span>を通すために、テスト自体を弱めたり消したり、自明にパスする内容へ書き換えることがあります。</p>
+        <ul class="rules">
+          <li>既存テストを勝手に変更・削除させない</li>
+          <li>バグ修正は、先に「失敗するテスト」を書かせてから直させる</li>
+          <li><span class="term" data-t="regression">リグレッションテスト</span>を残し、何を保証しているか把握する</li>
+        </ul>
+        <h4>バージョン管理・PR運用</h4>
+        <ul class="rules">
+          <li>タスク単位で<span class="term" data-t="branch">ブランチ</span>を切り、<span class="term" data-t="commit">コミット</span>は小さく</li>
+          <li>AIに自動コミットや<span class="term" data-t="forcepush">force-push</span>をさせない</li>
+          <li>レビューは<span class="term" data-t="pr">PR</span>の差分ベースで行う</li>
+        </ul>
+      </div>
+    </div>
+
+    <div id="ch6" class="chapter reveal">
+      <div class="idx">06</div>
+      <div>
+        <h3>AI出力との向き合い方</h3>
+        <div class="sub">How to treat AI output</div>
+        <p>AIを使うと、内容を理解しないまま開発を進められてしまう落とし穴があります。生成コードをそのまま使うと、問題発生時の原因調査や修正が難しくなります。</p>
+        <ul class="rules">
+          <li>AIに実装内容を説明させ、自分で理解してから<span class="term" data-t="merge">マージ</span>する</li>
+          <li>重要・複雑な処理は人によるレビューを必須にする</li>
+          <li><span class="term" data-t="hallu">ハルシネーション</span>に注意。見覚えのない<span class="term" data-t="api">API</span>や設定は公式ドキュメントで裏取り（<span class="term" data-t="mcp">MCP</span>等で最新仕様を参照させる）</li>
+        </ul>
+        <div class="note"><span class="ct">In short</span>AIの出力は「たたき台／補助的な提案」。最終判断は人間が行う、を前提に。詳しくは下の<a href="#trust" style="color:var(--accent-2)">信頼度メーター</a>で体感できます。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 信頼度メーター ============ -->
+<section id="trust" class="block" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">Signature — Trust Calibration</div>
+      <h2>どこまで<em>信用する</em>？</h2>
+      <p>AI開発で最も難しい問いのひとつ。スライダーを動かして、信頼度の「ちょうどいい」を体感してください。</p>
+    </div>
+    <div class="trust reveal">
+      <div class="gauge-wrap">
+        <div class="gscale"><span>信用しなさすぎ</span><span>ちょうどいい</span><span>信用しすぎ</span></div>
+        <div class="gtrack" id="gtrack">
+          <input type="range" id="trust-range" min="0" max="100" value="20" aria-label="AIへの信頼度" />
+          <div class="knob" id="trust-knob"></div>
+        </div>
+        <div class="zones"><span>0</span><span>50</span><span>100</span></div>
+        <div class="verdict">
+          <div class="vh" id="trust-h">確認作業が多すぎる</div>
+          <div class="vp" id="trust-p">出力を疑いすぎると、確認に時間がかかりAIを使うメリットが小さくなります。スライダーを右へ動かしてみましょう。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 実践編 (7) ============ -->
+<section id="practice" class="block" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">Part Ⅱ — Practice</div>
+      <h2>実践テクニック<em>（7章）</em></h2>
+      <p>日々の開発を効率化・高品質化する具体策。後半は <span class="term" data-t="claudecode">Claude Code</span> を例にしています。</p>
+    </div>
+
+    <div id="ch7" class="chapter reveal" style="border-top:none;padding-top:0">
+      <div class="idx">07</div>
+      <div>
+        <h4>7-1 ＆ 7-2 — モデルルーティング / クロスレビュー</h4>
+        <p><span class="term" data-t="routing">モデルルーティング</span>は、タスクの難易度に応じて使う<span class="term" data-t="model">モデル</span>を選び分けること。まず軽量モデルで試し、限界を感じたら上位へ切り替える「軽量ファースト」も有効です。<span class="term" data-t="crossreview">クロスレビュー</span>は複数AIで確認し合う手法。同じAIに観点を変えて反復させるのも効きます。</p>
+        <ul class="seq">
+          <li>バグの調査をしてください</li>
+          <li>前回と別の観点で調査をしてください</li>
+          <li>これまでの結果で、調べ足りない箇所がないか調査してください</li>
+          <li>これまでの結果の妥当性を検証し、優先度をつけてリスト化してください</li>
+        </ul>
+        <div class="callout"><span class="ct">Cost</span>クロスレビューや反復思考は効果的ですが、その分<span class="term" data-t="token">トークン</span>（＝コスト）を多く消費します。</div>
+
+        <h4>7-3 — プラン承認フロー</h4>
+        <p>意図ズレを防ぐ最も効果的な手段のひとつ。いきなり実装させず、先に方針・影響範囲・手順を提示させ、人が承認してから着手させます。仕様を先に固める <span class="term" data-t="spec_driven">spec駆動</span> は、手戻りと無駄なトークン消費を減らせます。</p>
+
+        <h4>7-4 — 定型化する</h4>
+        <p>頻出プロンプトは <code style="font-family:var(--mono);color:var(--accent-2)">CLAUDE.md</code> や <span class="term" data-t="slash">カスタムスラッシュコマンド</span> に登録。定型化した前提は<span class="term" data-t="cache">キャッシュ</span>が効きやすく、2回目以降のコスト削減にもつながります。</p>
+
+        <h4>7-5 — コンテキスト管理（/clear と /compact）</h4>
+        <p>Claude Code は会話履歴を積み上げるため、<span class="term" data-t="session">セッション</span>が長いほど消費が増えます。区切りで整理しましょう。</p>
+        <ul class="rules">
+          <li><em style="font-style:normal;color:var(--accent-2)">タスクが変わったら <code style="font-family:var(--mono)">/clear</code></em> … 履歴をリセット。消費削減の効果が最大</li>
+          <li><em style="font-style:normal;color:var(--warm)">会話が長くなりすぎたら <code style="font-family:var(--mono)">/compact</code></em> … 要約して引き継ぐ</li>
+        </ul>
+
+        <h4>7-6 〜 7-8 — 対話で掘り下げ / ファイル渡し / サブエージェント</h4>
+        <ul class="rules">
+          <li>重要な作業は対話ベースで要件を掘り下げる（「推測での実装を避けてください」等の一文が効く）</li>
+          <li>長大・複雑な内容はプロンプトに貼らず、ファイルに書いて読み込ませる</li>
+          <li>大きなタスクは<span class="term" data-t="agent">サブエージェント</span>で役割分担（発展。まず単一セッションに慣れてから）</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ コマンド早見表 ============ -->
+<section class="block" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">Cheat Sheet — Claude Code</div>
+      <h2>コマンド<em>早見表</em></h2>
+      <p>よく使う Claude Code のコマンド。バージョンやツールにより挙動が異なる場合があります。</p>
+    </div>
+    <div class="reveal">
+    <table class="cmd-table">
+      <thead><tr><th>コマンド</th><th>何をする？</th><th>使いどころ</th></tr></thead>
+      <tbody>
+        <tr><td><code>/init</code></td><td>プロジェクト用の <span class="term" data-t="rulefile">CLAUDE.md</span> を自動生成</td><td>最初の準備時</td></tr>
+        <tr><td><code>/clear</code></td><td>会話履歴をリセットする</td><td>タスクが変わったとき（消費削減大）</td></tr>
+        <tr><td><code>/compact</code></td><td>会話を要約して引き継ぐ</td><td>同じ作業を続けたいが履歴が重いとき</td></tr>
+        <tr><td><code>/review</code></td><td><span class="term" data-t="pr">PR</span> をレビューさせる（手元差分は <code>/code-review</code>）</td><td>変更内容を確認したいとき</td></tr>
+        <tr><td><code>/help</code></td><td>使えるコマンドの一覧・使い方を表示する</td><td>どんなコマンドがあるか忘れたとき</td></tr>
+        <tr><td><code>/model</code></td><td>使う<span class="term" data-t="model">モデル</span>を切り替える</td><td>タスクの難易度に応じて変えたいとき</td></tr>
+        <tr><td><code>/memory</code></td><td><span class="term" data-t="rulefile">CLAUDE.md</span> などメモリファイルを編集する</td><td>ルールや前提を更新したいとき</td></tr>
+        <tr><td><code>/context</code></td><td><span class="term" data-t="context">コンテキスト</span>の使用量を可視化する</td><td>履歴が重くなっていないか確認したいとき</td></tr>
+        <tr><td><code>/permissions</code></td><td>ツールの<span class="term" data-t="allowlist">許可/拒否</span>（権限）を管理する</td><td>危険な操作を制限したいとき</td></tr>
+        <tr><td><code>/mcp</code></td><td><span class="term" data-t="mcp">MCP</span> サーバーの接続・認証を管理する</td><td>外部ツールや情報源につなぐとき</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 用語集 ============ -->
+<section id="glossary" class="block" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">Glossary — Search</div>
+      <h2>用語集</h2>
+      <p>本文中の下線つき用語と同じ定義です。気になる言葉を検索してみてください。</p>
+    </div>
+    <div class="reveal">
+      <div class="gloss-tools">
+        <input type="text" id="gsearch" placeholder="用語を検索 … トークン, スキーマ, PR" aria-label="用語を検索" />
+        <span class="gcount" id="gcount"></span>
+      </div>
+      <div class="gloss-grid" id="gloss-grid"></div>
+      <div class="gempty" id="gempty">該当する用語が見つかりませんでした。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 開発事例 ============ -->
+<section id="cases" class="block" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">Showcase — Built with Claude Code</div>
+      <h2>Claude Code で<em>作った</em>もの</h2>
+      <p>このサイトで紹介したルールと実践テクニックを使い、Claude Code とともに制作したデモです。（別タブで開きます）</p>
+    </div>
+    <div class="refs reveal">
+      <a class="ref" href="sample/lumiLab.html" target="_blank" rel="noopener">
+        <div class="rt">光の実験場 — WebGL Laboratory <span class="arr">↗</span></div>
+        <div class="rd">ライブラリ不使用、生の WebGL 2.0 とシェーダーだけで描くGPUリアルタイムの光。複数のシーンを切り替えながら、光の表現を試せる実験場です。</div>
+        <div class="ru">sample/lumiLab.html</div>
+      </a>
+      <a class="ref" href="sample/suminagashi.html" target="_blank" rel="noopener">
+        <div class="rt">墨流し — GPU流体シミュレーション <span class="arr">↗</span></div>
+        <div class="rd">GPU にナビエ–ストークス方程式を解かせ、和紙の上に墨が広がる「墨流し」をリアルタイムに再現。顔料を落として流れを操れます。</div>
+        <div class="ru">sample/suminagashi.html</div>
+      </a>
+      <a class="ref" href="sample/tokeru.html" target="_blank" rel="noopener">
+        <div class="rt">融ける絵 — 画像を流体で溶かす <span class="arr">↗</span></div>
+        <div class="rd">画像を流体の濃度場に変換し、なぞると絵の具のように溶けて渦を巻く。放っておくと静かに元へ戻ります。写真のドラッグ＆ドロップにも対応。</div>
+        <div class="ru">sample/tokeru.html</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="fm">AI駆動開発ナレッジ — Generative AI × Claude Code</div>
+</footer>
+
+<div id="tip" role="tooltip"><div class="tt"><span id="tip-term"></span><span class="rd" id="tip-read"></span></div><div class="td" id="tip-def"></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/lenis@1/dist/lenis.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
