@@ -132,8 +132,8 @@ const TERMS = {
   }
   resize(); addEventListener("resize",resize);
 
-  // floating nodes
-  const N = REDUCED ? 18 : 46;
+  // floating nodes（画面面積に応じた密度。広い画面でも結線が疎にならないように）
+  const N = REDUCED ? 18 : Math.max(46, Math.min(110, Math.round(innerWidth*innerHeight/16000)));
   const nodes = Array.from({length:N},()=>({
     x:Math.random()*W, y:Math.random()*H,
     vx:(Math.random()-.5)*0.25*dpr, vy:(Math.random()-.5)*0.25*dpr, lit:0
@@ -142,7 +142,7 @@ const TERMS = {
   let progress = 0, raf;
   function draw(){
     ctx.clearRect(0,0,W,H);
-    const maxd = 150*dpr;
+    const maxd = 170*dpr;
     for(let i=0;i<nodes.length;i++){
       const a=nodes[i];
       a.x+=a.vx; a.y+=a.vy;
@@ -152,8 +152,9 @@ const TERMS = {
       for(let j=i+1;j<nodes.length;j++){
         const b=nodes[j], dx=a.x-b.x, dy=a.y-b.y, dist=Math.hypot(dx,dy);
         if(dist<maxd){
-          // 初期からはっきり見える下限（0.5）を持たせ、進捗とともにさらに濃くなる（最大0.9）
-          const o=(1-dist/maxd)*(0.5+0.4*(progress/100));
+          // 初期からはっきり見える下限（0.5）を持たせ、進捗とともにさらに濃くなる（最大0.9）。
+          // 減衰を緩め（^0.7）、遠めのペアの線も視認できるようにする
+          const o=Math.pow(1-dist/maxd,0.7)*(0.5+0.4*(progress/100));
           ctx.strokeStyle=`rgba(42,58,76,${o})`;   // deep slate — クリーム地でも視認できる濃さ
           ctx.lineWidth=dpr*1.1;
           ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
