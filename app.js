@@ -152,9 +152,10 @@ const TERMS = {
       for(let j=i+1;j<nodes.length;j++){
         const b=nodes[j], dx=a.x-b.x, dy=a.y-b.y, dist=Math.hypot(dx,dy);
         if(dist<maxd){
-          const o=(1-dist/maxd)*0.32*(progress/100);
-          ctx.strokeStyle=`rgba(78,96,118,${o})`;
-          ctx.lineWidth=dpr*.5;
+          // 初期からはっきり見える下限（0.5）を持たせ、進捗とともにさらに濃くなる（最大0.9）
+          const o=(1-dist/maxd)*(0.5+0.4*(progress/100));
+          ctx.strokeStyle=`rgba(42,58,76,${o})`;   // deep slate — クリーム地でも視認できる濃さ
+          ctx.lineWidth=dpr*1.1;
           ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
         }
       }
