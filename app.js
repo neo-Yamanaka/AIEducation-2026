@@ -51,6 +51,11 @@ const TERMS = {
   session:    ["セッション", "session", "AIとの一続きの会話のまとまり。長くなるほど履歴がたまっていきます。"],
   agent:      ["エージェント / サブエージェント", "agent", "自分で考えて手順を進めるAI。サブエージェントは、メインのAIから切り出した補助役のAIです。"],
   errhandle:  ["エラーハンドリング", "error handling", "エラーが起きたときの対処の仕方（どう記録し、利用者に何を表示するか など）。"],
+  planmode:   ["計画モード / プランモード", "plan mode", "AIに読み取り・調査だけをさせ、ファイルを変更せずに作業計画を立てさせるモード。計画を承認してから実装に移れるため、意図のズレを未然に防げます。"],
+  thinking:   ["拡張思考", "extended thinking", "答える前に、AIに考える過程を長めに取らせること。難しい設計やバグ調査で精度が上がりますが、その分トークン（コスト）と時間を多く使います。"],
+  worktree:   ["Git worktree", "git worktree", "1つのリポジトリから複数の作業フォルダを切り出す仕組み。別々のタスクを同時並行で進めても、互いに干渉しません。"],
+  multimodal: ["マルチモーダル / 画像入力", "multimodal", "文章だけでなく画像なども一緒に扱えること。エラー画面やデザインのスクリーンショットを渡して、状況を素早く正確に伝えられます。"],
+  checkpoint: ["チェックポイント / 巻き戻し", "checkpoint / rewind", "AIがファイルを変更する前の状態を自動で記録しておく仕組み。Claude Code では /rewind でコードや会話を変更前の状態に戻せます。正式なバージョン管理（コミット）の代わりではなく、作業中の安全網です。"],
 };
 
 /* ---------------------------------------------------------------------
@@ -180,9 +185,20 @@ const TERMS = {
     initHero();
     if(window.__lenis) window.__lenis.start();   // ローダー完了後にスムーススクロール開始
   }
-  // start
-  setTimeout(step, 350);
-  if(REDUCED){ /* still animate but faster */ }
+  // start（同一セッション内の再訪時は演出を短縮し、すぐ本文へ）
+  let seen = false;
+  try{
+    seen = sessionStorage.getItem("aidk-visited") === "1";
+    sessionStorage.setItem("aidk-visited", "1");
+  }catch(e){ /* プライベートモード等で storage 不可なら毎回フル演出 */ }
+  if(seen){
+    progress = 100;
+    fill.style.width = "100%";
+    status.textContent = msgs[msgs.length-1];
+    setTimeout(finish, 220);
+  } else {
+    setTimeout(step, 350);
+  }
 })();
 
 /* ---------------------------------------------------------------------
@@ -297,13 +313,25 @@ function initHero(){
     render(0.9);   // 静止した星座を一度だけ描く
     return;
   }
-  let fade = 0;
+  let fade = 0, rafId = null, running = false;
   function frame(){
     fade += (1 - fade) * 0.02;                       // 初期フェードイン
     render(fade * (1 - scrollFactor*0.92));           // スクロールで退場
-    requestAnimationFrame(frame);
+    rafId = requestAnimationFrame(frame);
   }
-  frame();
+  function start(){ if(!running){ running = true; frame(); } }
+  function stop(){ running = false; if(rafId){ cancelAnimationFrame(rafId); rafId = null; } }
+
+  // ヒーローが画面外にある間はループを完全停止し、本文スクロール中の負荷をゼロにする。
+  // #bg-canvas は position:absolute なので、ヒーローを通り過ぎると自然に非表示になる。
+  if("IntersectionObserver" in window){
+    const io = new IntersectionObserver((entries)=>{
+      entries.forEach(en=> en.isIntersecting ? start() : stop());
+    }, {threshold:0});
+    io.observe(canvas);
+  } else {
+    start();
+  }
 }
 
 /* ---------------------------------------------------------------------
@@ -404,7 +432,32 @@ function initHero(){
 })();
 
 /* ---------------------------------------------------------------------
-   8. スムーススクロール（Lenis）
+   8. モバイル ハンバーガーメニュー
+   ≤760px でナビを全画面パネルとして開閉する。開いている間は Lenis を
+   停止して背景スクロールを抑止し、リンク選択で閉じてから（Lenis を再開
+   してから）スムーススクロールへ引き継ぐ。この IIFE は smoothScroll より
+   先に定義し、リンクの「閉じる」処理が scrollTo より先に走るようにする。
+   --------------------------------------------------------------------- */
+(function mobileNav(){
+  const btn = document.getElementById("nav-toggle");
+  const nav = document.getElementById("primary-nav");
+  if(!btn || !nav) return;
+
+  function setOpen(open){
+    document.body.classList.toggle("nav-open", open);
+    btn.setAttribute("aria-expanded", open ? "true" : "false");
+    btn.setAttribute("aria-label", open ? "メニューを閉じる" : "メニューを開く");
+    if(window.__lenis){ open ? window.__lenis.stop() : window.__lenis.start(); }
+  }
+
+  btn.addEventListener("click", ()=> setOpen(!document.body.classList.contains("nav-open")));
+  nav.querySelectorAll("a").forEach(a=> a.addEventListener("click", ()=> setOpen(false)));
+  document.addEventListener("keydown", (e)=>{ if(e.key === "Escape") setOpen(false); });
+  window.addEventListener("resize", ()=>{ if(innerWidth > 760) setOpen(false); });
+})();
+
+/* ---------------------------------------------------------------------
+   9. スムーススクロール（Lenis）
    実スクロールを滑らかに補間する。既存のスクロール連動（プログレスバー・
    星座のフェード・ナビハイライト・reveal）は window スクロールを見ている
    ため、そのまま共存する。ローダー表示中は停止し、完了後に開始する。

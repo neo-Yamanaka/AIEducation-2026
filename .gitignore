@@ -1,6 +1,7 @@
 # ローカル設定・エディタ・OS 生成物
 .claude/
 .playwright-mcp/
+.superpowers/
 node_modules/
 .DS_Store
 Thumbs.db
