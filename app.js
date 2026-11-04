@@ -20,7 +20,7 @@ const TERMS = {
   dotenv:     [".env", "dotenv", "APIキーなどの機密情報をまとめて書く設定ファイル（env = environment＝環境）。中身は秘密にすべきものです。"],
   context:    ["コンテキスト", "context", "AIがその会話で見えている情報の範囲。渡したファイルや会話履歴など、「AIの作業机の上に広げた資料」とイメージするとわかりやすいです。"],
   injection:  ["プロンプトインジェクション", "prompt injection", "外部から取り込んだ文章にこっそり紛れた指示に、AIが従ってしまう攻撃。外部の文章は「ただのデータ」として扱わせるのが対策です。"],
-  allowlist:  ["許可/拒否リスト", "allow/deny list", "「実行してOK」「絶対ダメ」をあらかじめ決めておく一覧。rm（削除）や git push などの危険な命令を拒否しておきます。"],
+  allowlist:  ["許可/拒否リスト", "allow/deny list", "「実行してOK」「絶対ダメ」をあらかじめ決めておく一覧。Claude Code では .claude/settings.json の permissions に書き、rm（削除）や git push、.env の読み取りなどを拒否しておきます。"],
   lib:        ["ライブラリ / パッケージ", "library / package", "他の人が作った便利な部品（プログラムのまとまり）。取り込んで使うことで開発が速くなります。"],
   pkghallu:   ["パッケージハルシネーション", "package hallucination", "AIが実在しない部品名をもっともらしく作り出す現象。その名前を悪用した不正な部品が用意されていると被害につながる危険があります。"],
   db:         ["データベース（DB）", "database", "データを整理して保存しておく入れ物。表計算ソフトの表が集まったものをイメージするとわかりやすいです。"],
@@ -40,22 +40,25 @@ const TERMS = {
   hallu:      ["ハルシネーション", "hallucination", "AIが、事実でないことを「もっともらしく」答えてしまう現象（AIの“思い込み・作り話”）。"],
   api:        ["API / 関数", "API / function", "API は外部の機能を呼び出す窓口、関数はひとまとまりの処理に名前をつけたもの。どちらも「呼ぶと何かしてくれる部品」と考えてOK。"],
   mcp:        ["MCP", "Model Context Protocol", "AIを外部のツールや情報源につなぐ仕組み。これを使うと、AIに最新の公式情報などを参照させられます。"],
-  claudecode: ["Claude Code", "Claude Code", "Anthropic の Claude を使って、コマンド操作でコーディングを任せられるツール。"],
+  claudecode: ["Claude Code", "Claude Code", "Anthropic の Claude に、コードの読み書きやコマンド実行まで任せられる開発ツール。ターミナル・VS Code などのエディタ・デスクトップアプリ・ブラウザで使えます。"],
   token:      ["トークン", "token", "AIが文章を処理するときの細かい単位（おおまかには「文字数のようなもの」）。利用量や料金、コスト削減に関わります。"],
   model:      ["モデル", "model", "AIの「頭脳」の種類。賢くて高価なものから、軽くて安いものまで複数あります。"],
-  routing:    ["モデルルーティング", "model routing", "タスクの難しさやプロンプトの長さに応じて、使うモデルを選び分けること。"],
+  routing:    ["モデルルーティング", "model routing", "タスクの難しさに応じて、使うモデルを選び分けること。例：実装は上位モデル、ファイル検索などの軽い調査は軽量モデル。"],
   crossreview:["クロスレビュー", "cross review", "複数のAIに互いの出力をチェックさせること。人間同士の相互レビューと同じ発想です。"],
   spec_driven:["spec駆動", "spec-driven", "spec＝仕様。先に仕様をきちんと決めてから実装に進む進め方のこと。"],
-  slash:      ["カスタムスラッシュコマンド", "custom slash command", "/コマンド名 の形で、自分専用のよく使う指示を呼び出せる機能。"],
+  slash:      ["スキル / カスタムコマンド", "skill", "よく使う作業手順や指示をファイル（.claude/skills/）にまとめておき、/スキル名 で呼び出したり、AIが必要に応じて自動で読み込んだりできる機能。以前の「カスタムスラッシュコマンド」はスキルに統合されました。"],
   cache:      ["キャッシュ", "cache", "一度処理した内容を一時保存し、次回それを再利用して速度やコストを抑える仕組み。"],
   session:    ["セッション", "session", "AIとの一続きの会話のまとまり。長くなるほど履歴がたまっていきます。"],
   agent:      ["エージェント / サブエージェント", "agent", "自分で考えて手順を進めるAI。サブエージェントは、メインのAIから切り出した補助役のAIです。"],
   errhandle:  ["エラーハンドリング", "error handling", "エラーが起きたときの対処の仕方（どう記録し、利用者に何を表示するか など）。"],
   planmode:   ["計画モード / プランモード", "plan mode", "AIに読み取り・調査だけをさせ、ファイルを変更せずに作業計画を立てさせるモード。計画を承認してから実装に移れるため、意図のズレを未然に防げます。"],
-  thinking:   ["拡張思考", "extended thinking", "答える前に、AIに考える過程を長めに取らせること。難しい設計やバグ調査で精度が上がりますが、その分トークン（コスト）と時間を多く使います。"],
+  thinking:   ["思考の深さ（拡張思考）", "thinking / effort", "答える前に、AIが考える過程を挟むこと。Claude Code では /effort で深さを5段階に調整でき、深いほど難しい設計やバグ調査で精度が上がる一方、トークン（コスト）と時間を多く使います。"],
   worktree:   ["Git worktree", "git worktree", "1つのリポジトリから複数の作業フォルダを切り出す仕組み。別々のタスクを同時並行で進めても、互いに干渉しません。"],
   multimodal: ["マルチモーダル / 画像入力", "multimodal", "文章だけでなく画像なども一緒に扱えること。エラー画面やデザインのスクリーンショットを渡して、状況を素早く正確に伝えられます。"],
-  checkpoint: ["チェックポイント / 巻き戻し", "checkpoint / rewind", "AIがファイルを変更する前の状態を自動で記録しておく仕組み。Claude Code では /rewind でコードや会話を変更前の状態に戻せます。正式なバージョン管理（コミット）の代わりではなく、作業中の安全網です。"],
+  checkpoint: ["チェックポイント / 巻き戻し", "checkpoint / rewind", "AIがファイルを変更する前の状態を自動で記録しておく仕組み。Claude Code では /rewind でコードや会話を変更前の状態に戻せます。ただしシェルコマンドによる変更やサブエージェントの編集は戻せず、正式なバージョン管理（コミット）の代わりにはなりません。"],
+  hooks:      ["フック（Hooks）", "hooks", "「ファイルを編集する直前」「コマンドを実行する直前」などのタイミングで、決めておいたスクリプトを自動で実行する仕組み。危険な操作をその場でブロックしたり、編集後に自動整形したりできます。CLAUDE.md の「お願い」と違い、確実に効きます。"],
+  permmode:   ["権限モード", "permission mode", "AIにどこまで確認なしで作業させるかの設定。操作ごとに確認する・ファイル編集は自動で承認する・計画だけ立てる、などを Shift+Tab で切り替えられます。"],
+  automemory: ["自動メモリ", "auto memory", "AIが作業中に学んだこと（ビルド方法や好みなど）を自分でメモし、次回以降の会話で活かす仕組み。個人の手元に残るものなので、チームのルールは CLAUDE.md に書きます。"],
 };
 
 /* ---------------------------------------------------------------------
@@ -340,9 +343,11 @@ function initHero(){
    5. スクロール演出（reveal + progress bar + active nav）
    --------------------------------------------------------------------- */
 (function scrollFx(){
+  // threshold は割合指定のため、ビューポートより大きい要素（モバイルの用語集グリッド等）では
+  // 永久に発火しない。threshold:0（1pxでも見えたら）+ rootMargin で発火位置を調整する。
   const io = new IntersectionObserver((entries)=>{
     entries.forEach(en=>{ if(en.isIntersecting){ en.target.classList.add("in"); io.unobserve(en.target);} });
-  },{threshold:0.12, rootMargin:"0px 0px -8% 0px"});
+  },{threshold:0, rootMargin:"0px 0px -8% 0px"});
   document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
 
   const bar = document.getElementById("progress");
@@ -353,6 +358,8 @@ function initHero(){
   window.addEventListener("scroll", onScroll, {passive:true}); onScroll();
 
   // active nav highlight
+  // threshold（割合）判定だと背の高いセクション（#rules 等は約5000px）は永久に閾値へ
+  // 届かないため、「ビューポート中央の帯にセクションが重なったら」方式で判定する。
   const links = [...document.querySelectorAll(".top nav a")];
   const map = {};
   links.forEach(a=>{ const id=a.getAttribute("href").slice(1); const t=document.getElementById(id); if(t) map[id]={a,t}; });
@@ -364,7 +371,7 @@ function initHero(){
         m.a.style.color="var(--accent-2)";
       }
     });
-  },{threshold:0.4});
+  },{threshold:0, rootMargin:"-45% 0px -45% 0px"});
   Object.values(map).forEach(m=>navIO.observe(m.t));
 })();
 
@@ -408,17 +415,32 @@ function initHero(){
   const empty  = document.getElementById("gempty");
   if(!grid) return;
 
+  // 各用語は <details>。PC では常に開き、モバイル（≤760px）では用語名だけを並べて
+  // タップで定義を開く（46語 × 定義の縦積みで画面11枚分になるのを避ける）。
   const entries = Object.values(TERMS).sort((a,b)=>a[0].localeCompare(b[0],"ja"));
   entries.forEach(([term,read,def])=>{
-    const el = document.createElement("div");
+    const el = document.createElement("details");
     el.className = "gitem";
     el.dataset.search = (term+" "+read+" "+def).toLowerCase();
-    el.innerHTML = `<div class="gt">${term}${read&&read!==term?` <span class="gr">${read}</span>`:""}</div><div class="gd">${def}</div>`;
+    el.innerHTML = `<summary class="gt">${term}${read&&read!==term?` <span class="gr">${read}</span>`:""}</summary><div class="gd">${def}</div>`;
     grid.appendChild(el);
   });
   const items = [...grid.children];
   function setCount(n){ count.textContent = `${n} / ${entries.length} 語`; }
   setCount(entries.length);
+
+  const mobile = window.matchMedia("(max-width:760px)");
+  // 検索中はヒットした定義をすぐ読めるよう開く。未検索のモバイルだけ閉じる。
+  function syncOpen(){
+    const q = search.value.trim();
+    items.forEach(el=>{ el.open = !mobile.matches || !!q; });
+  }
+  syncOpen();
+  mobile.addEventListener("change", syncOpen);
+  // PC では閉じられないようにする（summary のクリックで畳まれるのを防ぐ）
+  grid.addEventListener("click",(e)=>{
+    if(!mobile.matches && e.target.closest("summary")) e.preventDefault();
+  });
 
   search.addEventListener("input",()=>{
     const q = search.value.trim().toLowerCase();
@@ -430,6 +452,7 @@ function initHero(){
     });
     setCount(shown);
     empty.classList.toggle("show", shown===0);
+    syncOpen();
   });
 })();
 
@@ -488,6 +511,7 @@ function initHero(){
       const target = document.querySelector(href);
       if(!target) return;
       e.preventDefault();
+      // 着地位置の固定ヘッダー回避は CSS の scroll-margin-top（Lenis も解釈する）に委ねる
       lenis.scrollTo(target, { offset: 0, duration: 1.2 });
     });
   });

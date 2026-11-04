@@ -95,7 +95,7 @@
       <div class="bcard reveal">
         <div class="n">iii.</div>
         <h3>Claude Codeとは</h3>
-        <p>Anthropic の Claude を、コマンド操作でコーディングに使えるツール。<span class="term" data-t="rulefile">ルールファイル</span>や<span class="term" data-t="slash">スラッシュコマンド</span>で、AIに前提を毎回読ませて作業させられます。</p>
+        <p>Anthropic の Claude に、コードの読み書きやコマンド実行まで任せられる開発ツール。ターミナル・VS Code などのエディタ・デスクトップアプリ・ブラウザで使えます。<span class="term" data-t="rulefile">ルールファイル</span>や<span class="term" data-t="slash">スキル</span>で、AIに前提を毎回読ませて作業させられます。</p>
       </div>
     </div>
   </div>
@@ -107,7 +107,7 @@
     <div class="sec-head reveal">
       <div class="kicker">Map — Rules &amp; Practice</div>
       <h2>このサイトの<em>歩き方</em></h2>
-      <p><em style="color:var(--warm);font-style:normal">Part Ⅰ（1〜6章）</em>はチームで守りたいルール・運用方針。<em style="color:var(--accent-2);font-style:normal">Part Ⅱ（実践）</em>は日々の作業を楽にするテクニック。気になるところへどうぞ。<span style="color:var(--muted)">（通読の目安：約15分）</span></p>
+      <p><em style="color:var(--warm);font-style:normal">Part Ⅰ（1〜6章）</em>はチームで守りたいルール・運用方針。<em style="color:var(--accent-2);font-style:normal">Part Ⅱ（実践）</em>は日々の作業を楽にするテクニック。気になるところへどうぞ。<span style="color:var(--muted)">（通読の目安：約20分）</span></p>
     </div>
     <div class="map reveal">
       <a href="#ch1" class="mnode"><span class="mc">CH.01</span><div class="mt">ルールの統一</div><div class="md">規約・設計方針・編集範囲を明文化</div></a>
@@ -161,15 +161,18 @@
         <p>1章で決めたルールは、持っているだけでは効きません。<span class="term" data-t="rulefile">ルールファイル</span>として、AIが毎回自動で読み込む場所に置いて初めて実効性を持ちます。</p>
         <h4>代表的なルールファイル</h4>
         <ul class="rules">
-          <li><code class="code">CLAUDE.md</code>（Claude Code）／ <code class="code">AGENTS.md</code> ／ <code class="code">.cursorrules</code>（Cursor）</li>
-          <li><span class="term" data-t="domain">ドメイン固有</span>のルールは <code class="code">.claude/rules/*.md</code> のように、特定パスを触ったときだけ読ませる</li>
+          <li><code class="code">CLAUDE.md</code>（Claude Code）／ <code class="code">AGENTS.md</code>（複数のAIツールで共通の形式）／ <code class="code">.cursor/rules/</code>（Cursor。旧形式の <code class="code">.cursorrules</code> は非推奨）</li>
+          <li><span class="term" data-t="domain">ドメイン固有</span>のルールは <code class="code">.claude/rules/*.md</code> に分け、先頭の <code class="code">paths:</code> で対象パスを指定すると、そのファイルを触ったときだけ読み込まれる</li>
+          <li>決まった作業手順（リリース手順・レビュー観点など）は<span class="term" data-t="slash">スキル</span>（<code class="code">.claude/skills/</code>）にして、必要なときだけ読ませる</li>
         </ul>
         <h4>運用のコツ</h4>
         <ul class="rules">
-          <li>ファイルは<em style="font-style:normal;color:var(--accent-2)">シンプルに保つ</em>。詰め込みすぎると毎回の読み込み<span class="term" data-t="token">トークン</span>が増え、肝心のルールが埋もれる</li>
+          <li>ファイルは<em style="font-style:normal;color:var(--accent-2)">シンプルに保つ</em>（CLAUDE.md は200行程度までが目安）。詰め込みすぎると毎回の読み込み<span class="term" data-t="token">トークン</span>が増え、肝心のルールが埋もれる</li>
           <li>全体に効かせたいルールは先頭に、特定分野のルールは分離する</li>
           <li>重要な方針は「レビュー時に必ず確認する観点」としても書いておくと、節目ごとにチェックされてブレにくい</li>
+          <li>Claude Code は、CLAUDE.md があると AGENTS.md を読みません。他ツールと共用するなら AGENTS.md を正本にし、CLAUDE.md に <code class="code">@AGENTS.md</code> と1行書いて取り込むのが確実（Windows ではシンボリックリンクより安全）</li>
         </ul>
+        <div class="note"><span class="ct">Memory</span>Claude Code には、AIが作業中に学んだことを自分でメモして次回に活かす<span class="term" data-t="automemory">自動メモリ</span>もあります。ただしこれは個人の手元に残るメモ。<em style="font-style:normal;color:var(--accent-2)">チームで守るルールは必ず CLAUDE.md 等に書いてリポジトリで共有</em>しましょう。</div>
       </div>
     </div>
 
@@ -185,7 +188,15 @@
           <li>コマンド自動実行は<span class="term" data-t="allowlist">許可/拒否リスト</span>で制御。<code class="code">rm</code>・<code class="code">git push</code>・<span class="term" data-t="dotenv">.env</span>読み取り等は<em style="font-style:normal;color:var(--accent-2)">AIによる自動実行を拒否</em>し、必要なときは人が内容を確認してから実行する</li>
           <li>AIが勧める<span class="term" data-t="lib">ライブラリ</span>は実在する正規品か確認（<span class="term" data-t="pkghallu">パッケージハルシネーション</span>はサプライチェーン上のリスク）</li>
         </ul>
-        <div class="callout"><span class="ct">Caution</span>「AIが勝手に破壊的な操作をした」という事故の大半は、権限と機密情報の扱いをルール化していないことが原因です。</div>
+
+        <h4>「お願い」ではなく「設定」で止める</h4>
+        <p>CLAUDE.md に「.env を読まないで」と書いても、それは<em style="font-style:normal;color:var(--accent-2)">お願い</em>にすぎず、AIが従わないことがあります。絶対に守らせたいことは、Claude Code の設定で<em style="font-style:normal;color:var(--warm)">仕組みとして</em>止めます。設定はリポジトリの <code class="code">.claude/settings.json</code> に置けば、チーム全員に同じ制限がかかります。</p>
+        <ul class="rules">
+          <li><span class="term" data-t="allowlist">拒否ルール</span>（<code class="code">permissions.deny</code>）… 例：<code class="code">"Read(./.env)"</code>・<code class="code">"Read(./secrets/**)"</code> を登録すると、読み取りも編集もブロックされる</li>
+          <li><span class="term" data-t="hooks">フック（Hooks）</span>… ツール実行の直前などに決めたスクリプトを走らせ、<code class="code">rm -rf</code> や本番DBへの接続といった危険な操作をその場で止める。編集後に自動でフォーマッタをかける用途にも使える</li>
+          <li><span class="term" data-t="permmode">権限モード</span>… 操作ごとに確認する／編集は自動承認する／計画だけ立てる、などを切り替えられる。全操作を無確認で通すモードは、隔離した検証環境以外では使わない</li>
+        </ul>
+        <div class="callout"><span class="ct">Caution</span>「AIが勝手に破壊的な操作をした」という事故の大半は、権限と機密情報の扱いをルール化していないことが原因です。なお、コマンドの書き込み先や通信先を OS レベルで制限する「サンドボックス」は macOS / Linux / WSL2 向けで、Windows ネイティブ環境では使えません。Windows 中心のチームほど、拒否ルールとフックをしっかり設定しておきましょう。</div>
       </div>
     </div>
 
@@ -294,7 +305,7 @@
         <p>AI開発で最も手戻りが出るのは「頼んだつもり」と「作られたもの」のズレ。実装に入る前に、方針・範囲・手順を握っておくのが、いちばん効きます。</p>
 
         <h4>プラン承認 ＆ 計画モード</h4>
-        <p>いきなり実装させず、先に<em style="font-style:normal;color:var(--accent-2)">方針・影響範囲・手順</em>を提示させ、人が承認してから着手させます。<span class="term" data-t="planmode">計画モード</span>を使うと、AIは読み取り・調査だけを行い、ファイルを書き換えずに計画を立てます。承認するまで変更が走らないので、意図ズレを未然に防げます。</p>
+        <p>いきなり実装させず、先に<em style="font-style:normal;color:var(--accent-2)">方針・影響範囲・手順</em>を提示させ、人が承認してから着手させます。<span class="term" data-t="planmode">計画モード</span>を使うと、AIは読み取り・調査だけを行い、ファイルを書き換えずに計画を立てます。承認するまでファイルが書き換わらないので、意図ズレを未然に防げます。Claude Code では <code class="code">Shift+Tab</code> でモードを切り替えるか、<code class="code">/plan</code> で計画モードに入れます。</p>
         <div class="note"><span class="ct">Why</span>先に計画を挟むと、間違った方向へ大量のコードが生成される事故を防げます。仕様を先に固める <span class="term" data-t="spec_driven">spec駆動</span> も同じ発想で、手戻りと無駄な<span class="term" data-t="token">トークン</span>消費を減らせます。</div>
 
         <h4>対話で要件を掘り下げる</h4>
@@ -309,9 +320,9 @@
         <p>「間違っても止めて戻せる」と知っておくと、安心して任せられます。</p>
         <ul class="rules">
           <li>方向がズレたと感じたら <em style="font-style:normal;color:var(--accent-2)">ESC でいつでも中断</em>し、指示を出し直す（最後まで待つ必要はない）</li>
-          <li>Claude Code はファイル変更前の状態を<span class="term" data-t="checkpoint">チェックポイント</span>として自動記録。<code class="code">/rewind</code> でコードや会話を変更前に巻き戻せる</li>
+          <li>Claude Code はファイル変更前の状態を<span class="term" data-t="checkpoint">チェックポイント</span>として自動記録。<code class="code">/rewind</code>（または入力欄が空の状態で ESC を2回）で、コード・会話のどちらか、または両方を変更前に巻き戻せる</li>
         </ul>
-        <div class="note"><span class="ct">Safety net</span>チェックポイントは便利な安全網ですが、<span class="term" data-t="commit">コミット</span>や<span class="term" data-t="branch">ブランチ</span>による正式なバージョン管理（<a href="#ch5" style="color:var(--accent-2)">5章</a>）の代わりにはなりません。</div>
+        <div class="note"><span class="ct">Safety net</span>チェックポイントは便利な安全網ですが、万能ではありません。<em style="font-style:normal;color:var(--warm)">シェルコマンド（rm・mv など）による変更や、サブエージェントによる編集は巻き戻せません</em>。<span class="term" data-t="commit">コミット</span>や<span class="term" data-t="branch">ブランチ</span>による正式なバージョン管理（<a href="#ch5" style="color:var(--accent-2)">5章</a>）の代わりにはならない、と覚えておきましょう。</div>
       </div>
     </div>
 
@@ -323,8 +334,8 @@
         <div class="sub">Verify, don't just trust</div>
         <p>出力を鵜呑みにしないための仕組み。<a href="#ch6" style="color:var(--accent-2)">6章「AI出力との向き合い方」</a>の、日々の実践面です。</p>
 
-        <h4>モデルルーティング（軽量ファースト）</h4>
-        <p><span class="term" data-t="routing">モデルルーティング</span>は、タスクの難易度に応じて使う<span class="term" data-t="model">モデル</span>を選び分けること。まず軽量モデルで試し、限界を感じたら上位へ切り替える「軽量ファースト」は、品質とコストの両立に有効です。</p>
+        <h4>モデルと思考量を選び分ける</h4>
+        <p><span class="term" data-t="routing">モデルルーティング</span>は、タスクに応じて使う<span class="term" data-t="model">モデル</span>を選び分けること。Claude Code の標準は上位モデルなので、<em style="font-style:normal;color:var(--accent-2)">普段の実装は標準のまま</em>使い、ファイル検索や定型的な調査など「軽い仕事」を軽量モデルに回すのが現実的です。軽量モデルで失敗してやり直すと、かえって高くつくこともあります。モデルは <code class="code">/model</code> で切り替えられます。</p>
 
         <h4>クロスレビューと反復</h4>
         <p><span class="term" data-t="crossreview">クロスレビュー</span>は複数AIで確認し合う手法。同じAIに観点を変えて反復させるのも効きます。</p>
@@ -339,9 +350,16 @@
         <h4>MCPで裏取りする</h4>
         <p>見覚えのない<span class="term" data-t="api">API</span>や設定は、<span class="term" data-t="hallu">ハルシネーション</span>の可能性があります。<span class="term" data-t="mcp">MCP</span>で公式ドキュメントや最新仕様を参照させ、AI自身に裏取りさせてから採用します。</p>
 
-        <h4>深く考えさせる（拡張思考）</h4>
-        <p>難しい設計判断やバグ調査では、<span class="term" data-t="thinking">拡張思考</span>（答える前に考える時間を長めに取る機能）が効きます。Claude Code では設定で有効/無効を切り替えられ、新しいモデルでは標準で有効です。あわせて「複数の案を比較してから答えて」「根拠も示して」のように促すと、検討の質がさらに上がります。</p>
-        <div class="note"><span class="ct">Trade-off</span>深く考えるほど時間と<span class="term" data-t="token">トークン</span>を使います。難所だけに使い、単純な作業では求めないのがコツ。<span class="term" data-t="test">テスト</span>を勝手に弱めさせない等の品質ルールは <a href="#ch5" style="color:var(--accent-2)">5章</a> を参照。</div>
+        <h4>AIにレビューさせる</h4>
+        <p>変更を<span class="term" data-t="commit">コミット</span>する前に、AI自身にもう一度チェックさせると見落としが減ります。人のレビューの<em style="font-style:normal;color:var(--accent-2)">前段</em>として使いましょう。</p>
+        <ul class="rules">
+          <li><code class="code">/code-review</code> … 手元の<span class="term" data-t="diff">差分</span>や<span class="term" data-t="pr">PR</span>を、バグの観点でレビューさせる</li>
+          <li><code class="code">/security-review</code> … 変更内容に脆弱性（入力チェック漏れ・機密情報の露出など）がないか調べさせる</li>
+        </ul>
+
+        <h4>深く考えさせる（思考の深さ）</h4>
+        <p>最新のモデルは、答える前に<span class="term" data-t="thinking">考える過程</span>を自動で挟みます。その深さは <code class="code">/effort</code> で5段階（low〜max）に調整でき、1回だけ深く考えさせたいときはプロンプトに <code class="code">ultrathink</code> と書きます。あわせて「複数の案を比較してから答えて」「根拠も示して」のように促すと、検討の質がさらに上がります。</p>
+        <div class="note"><span class="ct">Trade-off</span>深く考えるほど時間と<span class="term" data-t="token">トークン</span>を使います。難しい設計判断やバグ調査では上げ、単純な作業では下げるのがコツ。<span class="term" data-t="test">テスト</span>を勝手に弱めさせない等の品質ルールは <a href="#ch5" style="color:var(--accent-2)">5章</a> を参照。</div>
       </div>
     </div>
 
@@ -360,7 +378,11 @@
         </ul>
 
         <h4>サブエージェントで役割分担</h4>
-        <p>大きなタスクは<span class="term" data-t="agent">サブエージェント</span>に切り出して役割分担させます。調査役・実装役・レビュー役のように分けると、見通しが良くなります。</p>
+        <p>大きなタスクは<span class="term" data-t="agent">サブエージェント</span>に切り出して役割分担させます。調査役・実装役・レビュー役のように分けると、見通しが良くなります。サブエージェントは自分専用の<span class="term" data-t="context">コンテキスト</span>で動くため、長い調査ログでメインの会話が埋まりません。</p>
+        <ul class="rules">
+          <li>よく使う役割は <code class="code">.claude/agents/</code> にファイルで定義しておくと、チームで共有できる</li>
+          <li>定義ごとに使うモデルを指定できる。調査役は軽量モデル、のように分ければコストも下がる</li>
+        </ul>
 
         <h4>Git worktree で並行作業</h4>
         <p><span class="term" data-t="worktree">Git worktree</span>を使うと、1つのリポジトリから複数の作業場所を切り出し、別々のタスクを同時に進められます。作業どうしが干渉しないため、サブエージェントとの相性も良いです。</p>
@@ -385,16 +407,17 @@
         <div class="note"><span class="ct">Tip</span>Claude Code では、プロンプトに <code class="code">@src/auth/login.ts</code> のように <code class="code">@ファイルパス</code> を書くだけで、そのファイルを対象として読み込ませられます。</div>
 
         <h4>コンテキストを整理する（/clear と /compact）</h4>
-        <p><span class="term" data-t="session">セッション</span>が長いほど履歴が積み上がり、消費が増えます。<code class="code">/context</code> で使用量を確かめながら、区切りで整理しましょう。</p>
+        <p><span class="term" data-t="session">セッション</span>が長いほど履歴が積み上がり、消費が増えます。<code class="code">/context</code> で使用量を、<code class="code">/usage</code> で利用状況を確かめながら、区切りで整理しましょう。</p>
         <ul class="rules">
           <li><em style="font-style:normal;color:var(--accent-2)">タスクが変わったら <code class="mono">/clear</code></em> … 履歴をリセット。消費削減の効果が最大</li>
           <li><em style="font-style:normal;color:var(--warm)">会話が長くなりすぎたら <code class="mono">/compact</code></em> … 要約して引き継ぐ</li>
         </ul>
 
         <h4>定型化してキャッシュを効かせる</h4>
-        <p>頻出プロンプトは <code class="code">CLAUDE.md</code> や <span class="term" data-t="slash">カスタムスラッシュコマンド</span> に登録します。定型化した前提は<span class="term" data-t="cache">キャッシュ</span>が効きやすく、同じ<span class="term" data-t="session">セッション</span>内での2回目以降のやり取りのコスト削減につながります（入力の手間が減る効果は、セッションをまたいでも有効です）。</p>
+        <p>毎回の前提は <code class="code">CLAUDE.md</code> に、頻出の作業手順は<span class="term" data-t="slash">スキル</span>に登録します。CLAUDE.md のように毎回同じ内容は<span class="term" data-t="cache">キャッシュ</span>が自動で効き、同じ<span class="term" data-t="session">セッション</span>内での2回目以降のやり取りが安くなります。スキルは必要なときだけ読み込まれるので、CLAUDE.md に全部書くより軽く済みます（入力の手間が減る効果は、セッションをまたいでも有効です）。</p>
+        <div class="note"><span class="ct">Tip</span>キャッシュは、モデルや思考の深さを途中で切り替えたり、<code class="code">/compact</code> したりすると作り直しになります。また、セッション中に CLAUDE.md を書き換えても、<code class="code">/clear</code> や再起動をするまで反映されません。</div>
 
-        <div class="callout"><span class="ct">In short</span>「手戻りを減らすこと」も立派なコスト削減です。<a href="#ch7" style="color:var(--accent-2)">意図を固める</a>（プラン承認）で無駄な生成を防ぎ、<a href="#ch7b" style="color:var(--accent-2)">軽量ファースト</a>で必要十分なモデルを選ぶ——これらはすべてトークン削減に効いてきます。</div>
+        <div class="callout"><span class="ct">In short</span>「手戻りを減らすこと」も立派なコスト削減です。<a href="#ch7" style="color:var(--accent-2)">意図を固める</a>（プラン承認）で無駄な生成を防ぎ、<a href="#ch7b" style="color:var(--accent-2)">モデルと思考量を選び分ける</a>——これらはすべてトークン削減に効いてきます。</div>
       </div>
     </div>
   </div>
@@ -416,12 +439,17 @@
         <tr><td><code>/clear</code></td><td>会話履歴をリセットする</td><td>タスクが変わったとき（消費削減大）</td></tr>
         <tr><td><code>/compact</code></td><td>会話を要約して引き継ぐ</td><td>同じ作業を続けたいが履歴が重いとき</td></tr>
         <tr><td><code>/rewind</code></td><td><span class="term" data-t="checkpoint">チェックポイント</span>まで巻き戻す（コード・会話）</td><td>AIの変更をやり直したいとき</td></tr>
-        <tr><td><code>/review</code></td><td><span class="term" data-t="pr">PR</span> をレビューさせる（手元差分は <code>/code-review</code>）</td><td>変更内容を確認したいとき</td></tr>
+        <tr><td><code>/plan</code></td><td><span class="term" data-t="planmode">計画モード</span>に入る（<code>Shift+Tab</code> でも切替）</td><td>実装前に方針を固めたいとき</td></tr>
+        <tr><td><code>/code-review</code></td><td>手元の<span class="term" data-t="diff">差分</span>や <span class="term" data-t="pr">PR</span> をレビューさせる（<code>/review</code> も同じ）</td><td>コミット・PR作成の前に</td></tr>
+        <tr><td><code>/security-review</code></td><td>変更内容の脆弱性をチェックさせる</td><td>認証・入力処理などを触ったとき</td></tr>
         <tr><td><code>/help</code></td><td>使えるコマンドの一覧・使い方を表示する</td><td>どんなコマンドがあるか忘れたとき</td></tr>
         <tr><td><code>/model</code></td><td>使う<span class="term" data-t="model">モデル</span>を切り替える</td><td>タスクの難易度に応じて変えたいとき</td></tr>
+        <tr><td><code>/effort</code></td><td><span class="term" data-t="thinking">思考の深さ</span>を調整する（low〜max）</td><td>難所は深く、単純作業は浅く</td></tr>
         <tr><td><code>/memory</code></td><td><span class="term" data-t="rulefile">CLAUDE.md</span> などメモリファイルを編集する</td><td>ルールや前提を更新したいとき</td></tr>
         <tr><td><code>/context</code></td><td><span class="term" data-t="context">コンテキスト</span>の使用量を可視化する</td><td>履歴が重くなっていないか確認したいとき</td></tr>
+        <tr><td><code>/usage</code></td><td>利用量・コストを確認する</td><td>使いすぎていないか確かめたいとき</td></tr>
         <tr><td><code>/permissions</code></td><td>ツールの<span class="term" data-t="allowlist">許可/拒否</span>（権限）を管理する</td><td>危険な操作を制限したいとき</td></tr>
+        <tr><td><code>/hooks</code></td><td>設定済みの<span class="term" data-t="hooks">フック</span>を確認する</td><td>自動チェックが効いているか見たいとき</td></tr>
         <tr><td><code>/mcp</code></td><td><span class="term" data-t="mcp">MCP</span> サーバーの接続・認証を管理する</td><td>外部ツールや情報源につなぐとき</td></tr>
       </tbody>
     </table>
@@ -439,7 +467,7 @@
     </div>
     <div class="reveal">
       <div class="gloss-tools">
-        <input type="text" id="gsearch" placeholder="用語を検索 … トークン, スキーマ, PR" aria-label="用語を検索" />
+        <input type="text" id="gsearch" placeholder="用語を検索（例：トークン）" aria-label="用語を検索" />
         <span class="gcount" id="gcount"></span>
       </div>
       <div class="gloss-grid" id="gloss-grid"></div>
@@ -463,6 +491,7 @@
           <li>チームで共通ルールを決め、AIにも同じ前提で作業させる</li>
           <li>ルールは <code class="code warm">CLAUDE.md</code> 等に集約し、毎回読ませる（シンプルに保つ）</li>
           <li>機密情報（APIキー・.env・本番データ）はコンテキストに渡さない</li>
+          <li>絶対に止めたい操作は、お願いでなく拒否ルール・フックで仕組み化する</li>
           <li>DBのテーブル・スキーマ変更は承認制＋人の確認</li>
           <li>頼んでいないリファクタリングをさせない／テストを勝手に弱めさせない</li>
           <li>AIの出力は「たたき台」。最終判断と重要処理のレビューは人が行う</li>
@@ -472,9 +501,10 @@
         <div class="rh">活かす — 実践（Part Ⅱ）</div>
         <ul class="rules check">
           <li>実装前に計画を出させ、承認してから着手（プラン承認・計画モード）</li>
-          <li>軽量モデルから試し、必要に応じて上位へ（軽量ファースト）</li>
+          <li>実装は標準モデル、軽い調査は軽量モデルのサブエージェントへ</li>
           <li>見覚えのないAPIや設定は MCP 等で裏取りしてから採用</li>
-          <li>難所は深く考えさせ、単純作業では求めない（コスト意識）</li>
+          <li>コミット前に <code class="code">/code-review</code> でAIにも確認させる</li>
+          <li>難所は <code class="code">/effort</code> を上げ、単純作業では下げる（コスト意識）</li>
           <li>修正は対象ファイルを絞って渡す＝無駄なトークンを減らす</li>
           <li>タスクが変わったら <code class="code">/clear</code>、長引いたら <code class="code">/compact</code> で整理</li>
         </ul>

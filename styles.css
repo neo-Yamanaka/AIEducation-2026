@@ -61,7 +61,7 @@ a{color:inherit}
 .label{font-family:var(--body);font-weight:500;font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--muted)}
 
 /* inline code utilities */
-.code{font-family:var(--mono);color:var(--accent-2)}
+.code{font-family:var(--mono);color:var(--accent-2);overflow-wrap:anywhere}  /* 長いパスや設定値でスマホの横幅を押し広げない */
 .code.warm{color:var(--warm)}
 .mono{font-family:var(--mono)}  /* 色は文脈（親要素）を継承 */
 
@@ -109,7 +109,8 @@ header.top{
   /* backdrop-filter は fixed 要素の包含ブロックを作るため、モバイルでは無効化して
      ナビパネルをビューポート基準（全画面）にする。ブランド名はパネルより前面へ。 */
   .brand{font-size:15px;position:relative;z-index:82}
-  header.top{padding:18px 22px;backdrop-filter:none}
+  /* ぼかしが無いぶん、下へ透ける背景だと本文の文字がブランド名と重なるため不透明にする */
+  header.top{padding:18px 22px;backdrop-filter:none;background:var(--ink);border-bottom:1px solid var(--line-soft)}
   .nav-toggle{display:block}
   /* ナビをスライドインする全画面パネルに */
   .top nav{
@@ -168,12 +169,16 @@ header.top{
    SECTIONS
    ============================================================ */
 section{position:relative;z-index:1}
+/* ネイティブスクロール時（reduced-motion / Lenis 読み込み失敗時）も
+   アンカー着地で固定ヘッダーに見出しが隠れないようにする */
+section[id],.chapter[id]{scroll-margin-top:90px}
 .wrap{max-width:var(--maxw);margin:0 auto;padding:0 32px}
 .block{padding:130px 0}
 .sec-head{margin-bottom:64px;max-width:680px}
 .sec-head .kicker{display:flex;align-items:center;gap:16px;margin-bottom:26px;font-family:var(--body);font-weight:500;font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--accent)}
 .sec-head .kicker::before{content:"";width:40px;height:1px;background:linear-gradient(90deg,var(--warm),var(--accent-dim))}
 .sec-head h2{font-family:var(--display);font-weight:500;font-size:clamp(1.9rem,4.5vw,3.1rem);line-height:1.18;letter-spacing:-.01em;margin-bottom:22px}
+.sec-head h2 em{display:inline-block}  /* 「（1〜6 / 章）」のような強調語の泣き別れを防ぐ */
 .sec-head p{color:var(--muted);font-size:1.04rem;font-weight:400;line-height:2}
 
 .reveal{opacity:0;transform:translateY(30px);transition:opacity 1s var(--ease),transform 1s var(--ease)}
@@ -193,7 +198,12 @@ section{position:relative;z-index:1}
 /* ----- chapter map ----- */
 .map{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line-soft);border:1px solid var(--line-soft)}
 @media(max-width:900px){.map{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:520px){.map{grid-template-columns:1fr}}
+@media(max-width:520px){
+  /* 1列だと8枚で画面1.5枚分になるため、2列のまま余白と文字を詰める */
+  .map .mnode{padding:18px 14px}
+  .map .mnode .mt{font-size:.98rem;margin:8px 0 4px}
+  .map .mnode .md{font-size:.76rem;line-height:1.6}
+}
 .mnode{display:block;text-decoration:none;background:var(--ink);padding:28px 24px;position:relative;overflow:hidden;transition:background .35s var(--ease)}
 .mnode::after{content:"";position:absolute;left:0;top:0;height:1px;width:100%;background:linear-gradient(90deg,var(--warm),var(--accent));transform:scaleX(0);transform-origin:left;transition:transform .5s var(--ease)}
 .mnode:hover{background:var(--panel)}
@@ -205,6 +215,7 @@ section{position:relative;z-index:1}
 
 /* ----- chapter blocks ----- */
 .chapter{display:grid;grid-template-columns:128px 1fr;gap:48px;padding:78px 0;border-top:1px solid var(--line-soft)}
+.chapter>div{min-width:0}  /* グリッド子要素が長いコードで列幅を超えないように */
 @media(max-width:760px){.chapter{grid-template-columns:1fr;gap:18px;padding:54px 0}}
 .chapter .idx{font-family:var(--display);font-weight:400;font-size:4rem;line-height:1;color:var(--line);position:sticky;top:100px;align-self:start}
 @media(max-width:760px){.chapter .idx{position:static;font-size:2.6rem;color:var(--accent-dim);font-style:italic}}
@@ -291,7 +302,7 @@ section{position:relative;z-index:1}
    GLOSSARY
    ============================================================ */
 .gloss-tools{display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:34px;border-bottom:1px solid var(--line);padding-bottom:18px}
-#gsearch{flex:1;min-width:220px;background:transparent;border:none;padding:6px 2px;color:var(--text);font-family:var(--display);font-size:1.1rem}
+#gsearch{flex:1;min-width:220px;min-height:44px;background:transparent;border:none;padding:8px 2px;color:var(--text);font-family:var(--display);font-size:1.1rem}
 #gsearch:focus{outline:none;box-shadow:0 1px 0 0 var(--accent)}
 #gsearch::placeholder{color:var(--muted-2);font-style:italic}
 .gcount{font-family:var(--body);font-weight:500;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted-2)}
@@ -303,6 +314,16 @@ section{position:relative;z-index:1}
 .gitem .gt{font-family:var(--display);font-weight:500;font-size:1.12rem;color:var(--text);display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;letter-spacing:.01em}
 .gitem .gt .gr{font-family:var(--body);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);font-weight:500}
 .gitem .gd{color:var(--muted);font-size:.89rem;margin-top:9px;line-height:1.85;font-weight:400}
+.gitem summary{list-style:none;cursor:default}
+.gitem summary::-webkit-details-marker{display:none}
+@media(max-width:760px){
+  /* モバイルは用語名だけを並べ、タップで定義を開くアコーディオンに */
+  .gitem{padding:0}
+  .gitem summary{cursor:pointer;padding:16px 44px 16px 20px;position:relative;min-height:52px;align-items:center}
+  .gitem summary::after{content:"+";position:absolute;right:20px;top:50%;transform:translateY(-50%);font-family:var(--body);font-size:1.1rem;color:var(--accent-dim);transition:transform .3s var(--ease)}
+  .gitem[open] summary::after{transform:translateY(-50%) rotate(45deg)}
+  .gitem .gd{margin:0;padding:0 20px 18px}
+}
 .gempty{color:var(--muted);font-family:var(--display);font-style:italic;font-size:1rem;padding:30px 2px;display:none}
 .gempty.show{display:block}
 
